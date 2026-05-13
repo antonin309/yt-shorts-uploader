@@ -2,11 +2,18 @@ import os
 import json
 import glob
 import random
+import shutil
 import threading
 import subprocess
 from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
+import googleapiclient.discovery
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024
@@ -14,17 +21,23 @@ app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024
 ACCOUNTS_FOLDER = "accounts"
 PLAYLISTS_FOLDER = "playlists"
 
+VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v', '.flv', '.wmv', '.mts', '.m2ts'}
+
 TIME_WINDOWS = [
-    ("Früh", 6, 8),
-    ("Vormittags", 8, 11),
-    ("Mittag", 11, 13),
-    ("Nachmittags", 13, 16),
-    ("Abends", 18, 20),
-    ("Spätabends", 21, 23),
+    ("Early Morning", 5, 7),
+    ("Morning", 7, 9),
+    ("Late Morning", 9, 11),
+    ("Midday", 11, 13),
+    ("Afternoon", 13, 15),
+    ("Late Afternoon", 15, 17),
+    ("Evening", 17, 19),
+    ("Night", 19, 21),
+    ("Late Night", 21, 23),
 ]
 
 upload_log = []
 upload_running = False
+connect_status = {}   # account_name -> 'running' | 'done' | 'error:...'
 
 
 def get_accounts():
@@ -63,8 +76,11 @@ def load_playlist_captions(name):
 
 def get_playlist_videos(name):
     folder = os.path.join(playlist_path(name), "videos")
-    files = sorted(glob.glob(os.path.join(folder, "*.mp4")))
-    return [os.path.basename(f) for f in files]
+    files = []
+    for f in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+        if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS:
+            files.append(f)
+    return files
 
 
 def random_time_in_window(date, hour_start, hour_end):
@@ -74,6 +90,40 @@ def random_time_in_window(date, hour_start, hour_end):
                         tzinfo=timezone(timedelta(hours=2)))
     utc_dt = local_dt.astimezone(timezone.utc)
     return utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def get_channel_info(account_name):
+    token_path = os.path.join(ACCOUNTS_FOLDER, account_name, "token.json")
+    cache_path = os.path.join(ACCOUNTS_FOLDER, account_name, "channel_info.json")
+
+    if os.path.exists(cache_path):
+        with open(cache_path, "r") as f:
+            return json.load(f)
+
+    if not os.path.exists(token_path):
+        return None
+
+    try:
+        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+        response = youtube.channels().list(part="snippet,statistics", mine=True).execute()
+        if not response.get("items"):
+            return None
+        item = response["items"][0]
+        info = {
+            "channelName": item["snippet"]["title"],
+            "channelId": item["id"],
+            "thumbnail": item["snippet"]["thumbnails"].get("default", {}).get("url", ""),
+            "subscribers": item["statistics"].get("subscriberCount", "?"),
+            "email": item["snippet"].get("customUrl", ""),
+        }
+        with open(cache_path, "w") as f:
+            json.dump(info, f)
+        return info
+    except Exception as e:
+        return {"error": str(e)}
 
 
 def get_playlists_by_account():
@@ -111,11 +161,12 @@ def upload_video_file(playlist):
     folder = os.path.join(playlist_path(playlist), "videos")
     os.makedirs(folder, exist_ok=True)
     if "videos" not in request.files:
-        return jsonify({"error": "Keine Datei"}), 400
+        return jsonify({"error": "No file"}), 400
     files = request.files.getlist("videos")
     uploaded = []
     for f in files:
-        if f.filename.endswith(".mp4"):
+        ext = os.path.splitext(f.filename)[1].lower()
+        if ext in VIDEO_EXTENSIONS:
             filename = secure_filename(f.filename)
             f.save(os.path.join(folder, filename))
             uploaded.append(filename)
@@ -141,14 +192,66 @@ def save_config(playlist):
     return jsonify({"ok": True})
 
 
+@app.route("/account-info/<name>")
+def account_info(name):
+    info = get_channel_info(name)
+    return jsonify(info or {})
+
+
 @app.route("/create-account", methods=["POST"])
 def create_account():
     data = request.json
-    name = data.get("name", "").strip()
+    name = data.get("name", "").strip().lower().replace(" ", "-")
     if not name:
-        return jsonify({"error": "Kein Name"}), 400
+        return jsonify({"error": "No name"}), 400
     os.makedirs(os.path.join(ACCOUNTS_FOLDER, name), exist_ok=True)
     return jsonify({"ok": True, "name": name})
+
+
+@app.route("/connect-account/<name>", methods=["POST"])
+def connect_account(name):
+    if connect_status.get(name) == 'running':
+        return jsonify({"error": "Already connecting"}), 400
+
+    client_path = "client.json"
+    if not os.path.exists(client_path):
+        return jsonify({"error": "client.json not found"}), 500
+
+    connect_status[name] = 'running'
+
+    def run():
+        try:
+            flow = InstalledAppFlow.from_client_secrets_file(client_path, SCOPES)
+            creds = flow.run_local_server(port=0, open_browser=True)
+            folder = os.path.join(ACCOUNTS_FOLDER, name)
+            os.makedirs(folder, exist_ok=True)
+            token_path = os.path.join(folder, "token.json")
+            with open(token_path, "w") as f:
+                f.write(creds.to_json())
+            # Clear channel info cache so it refreshes on next load
+            cache_path = os.path.join(folder, "channel_info.json")
+            if os.path.exists(cache_path):
+                os.remove(cache_path)
+            connect_status[name] = 'done'
+        except Exception as e:
+            connect_status[name] = f'error:{e}'
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"ok": True})
+
+
+@app.route("/connect-status/<name>")
+def connect_status_route(name):
+    return jsonify({"status": connect_status.get(name, 'idle')})
+
+
+@app.route("/delete-account/<name>", methods=["POST"])
+def delete_account(name):
+    folder = os.path.join(ACCOUNTS_FOLDER, name)
+    if not os.path.exists(folder):
+        return jsonify({"error": "Not found"}), 404
+    shutil.rmtree(folder)
+    return jsonify({"ok": True})
 
 
 @app.route("/create-playlist", methods=["POST"])
@@ -156,14 +259,14 @@ def create_playlist():
     data = request.json
     name = data.get("name", "").strip().lower().replace(" ", "-")
     if not name:
-        return jsonify({"error": "Kein Name"}), 400
+        return jsonify({"error": "No name"}), 400
     folder = playlist_path(name)
     os.makedirs(os.path.join(folder, "videos"), exist_ok=True)
     config = {
         "account": data.get("account", ""),
         "displayName": data.get("displayName", name),
-        "hashtags": data.get("hashtags", "#Shorts"),
-        "tags": data.get("tags", ""),
+        "hashtags": "#Shorts",
+        "tags": "",
         "privacy": "public",
         "language": "en"
     }
@@ -174,55 +277,102 @@ def create_playlist():
     return jsonify({"ok": True, "name": name})
 
 
+@app.route("/delete-playlist/<name>", methods=["POST"])
+def delete_playlist(name):
+    folder = playlist_path(name)
+    if not os.path.exists(folder):
+        return jsonify({"error": "Not found"}), 404
+    shutil.rmtree(folder)
+    return jsonify({"ok": True})
+
+
 @app.route("/schedule", methods=["POST"])
 def schedule():
     data = request.json
-    playlist = data.get("playlist")
+    playlists = data.get("playlists", [])
+    if not playlists:
+        pl = data.get("playlist")
+        if pl:
+            playlists = [pl]
+
     account = data.get("account")
     start_date_str = data.get("startDate")
-    hashtags = [h.strip() for h in data.get("hashtags", "#Shorts").split(",")]
-    tags = [t.strip() for t in data.get("tags", "").split(",") if t.strip()]
     privacy = data.get("privacy", "public")
     caption_mode = data.get("captionMode", "random")
     fixed_caption = data.get("fixedCaption", "")
     random_times = data.get("randomTimes", True)
-    active_slots = data.get("activeSlots", [1, 3, 4, 5])
-    captions = load_playlist_captions(playlist)
+    made_for_kids = False
+    active_slots = data.get("activeSlots", [1, 3, 6, 8])
 
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-    videos_folder = os.path.join(playlist_path(playlist), "videos")
-    video_files = sorted(glob.glob(os.path.join(videos_folder, "*.mp4")))
+    active_windows = [TIME_WINDOWS[i] for i in sorted(active_slots) if i < len(TIME_WINDOWS)]
+    slots_per_day = len(active_windows)
 
-    active_windows = [TIME_WINDOWS[i] for i in active_slots if i < len(TIME_WINDOWS)]
-    if not active_windows:
-        active_windows = TIME_WINDOWS
+    if not active_windows or not playlists:
+        return jsonify({"error": "No time slots or subtopics selected"}), 400
+
+    # Load per-playlist data
+    captions_by_pl = {}
+    config_by_pl = {}
+    video_queues = []
+    for pl in playlists:
+        videos = sorted(glob.glob(os.path.join(playlist_path(pl), "videos", "*.mp4")))
+        video_queues.append((pl, videos))
+        captions_by_pl[pl] = load_playlist_captions(pl)
+        config_by_pl[pl] = load_playlist_config(pl)
+
+    # Round-robin interleave across subtopics so each day gets variety
+    merged = []
+    max_len = max((len(q) for _, q in video_queues), default=0)
+    for i in range(max_len):
+        for pl_id, videos in video_queues:
+            if i < len(videos):
+                merged.append((videos[i], pl_id))
 
     scheduled = []
-    for i, video_path in enumerate(video_files):
-        slot_idx = i % len(active_windows)
-        day_offset = i // len(active_windows)
+    for k, (video_path, pl_id) in enumerate(merged):
+        slot_idx = k % slots_per_day
+        day_offset = k // slots_per_day
         current_date = start_date + timedelta(days=day_offset)
         slot_name, hour_start, hour_end = active_windows[slot_idx]
+
         if random_times:
             publish_at = random_time_in_window(current_date, hour_start, hour_end)
         else:
             publish_at = random_time_in_window(current_date, hour_start, hour_start + 1)
 
-        if caption_mode == "random" and captions:
-            caption = random.choice(captions)
+        pl_config = config_by_pl.get(pl_id, {})
+        pl_captions = captions_by_pl.get(pl_id, [])
+
+        if caption_mode == "random" and pl_captions:
+            caption = random.choice(pl_captions)
         elif caption_mode == "fixed":
             caption = fixed_caption
         else:
             caption = ""
 
+        # ── Hashtags: core always + N random from pool ──
+        core_ht = [h.strip() for h in pl_config.get("hashtagsCore", pl_config.get("hashtags", "#Shorts")).split(",") if h.strip()]
+        pool_ht = [h.strip() for h in pl_config.get("hashtagsPool", "").split(",") if h.strip()]
+        pick_ht = int(pl_config.get("hashtagsPickN", 3))
+        picked_ht = random.sample(pool_ht, min(pick_ht, len(pool_ht))) if pool_ht else []
+        final_hashtags = core_ht + picked_ht
+
+        # ── Tags: core always + N random from pool ──
+        core_tg = [t.strip() for t in pl_config.get("tagsCore", pl_config.get("tags", "")).split(",") if t.strip()]
+        pool_tg = [t.strip() for t in pl_config.get("tagsPool", "").split(",") if t.strip()]
+        pick_tg = int(pl_config.get("tagsPickN", 5))
+        picked_tg = random.sample(pool_tg, min(pick_tg, len(pool_tg))) if pool_tg else []
+        final_tags = core_tg + picked_tg
+
         meta = {
             "title": caption,
             "description": caption,
-            "tags": tags,
-            "hashtags": hashtags,
+            "tags": final_tags,
+            "hashtags": final_hashtags,
             "privacy": privacy,
-            "madeForKids": False,
-            "language": "en",
+            "madeForKids": made_for_kids,
+            "language": pl_config.get("language", "en"),
             "publishAt": publish_at,
         }
 
@@ -232,6 +382,8 @@ def schedule():
 
         scheduled.append({
             "video": os.path.basename(video_path),
+            "playlist": pl_id,
+            "playlistDisplay": pl_config.get("displayName", pl_id),
             "date": str(current_date),
             "slot": slot_name,
             "publishAt": publish_at,
@@ -246,12 +398,15 @@ def start_upload():
     global upload_log, upload_running
     data = request.json
     account = data.get("account")
-    playlist = data.get("playlist")
+    playlists = data.get("playlists", [])
+    if not playlists:
+        pl = data.get("playlist")
+        if pl:
+            playlists = [pl]
 
     if upload_running:
-        return jsonify({"error": "Upload läuft bereits"}), 400
+        return jsonify({"error": "Upload already running"}), 400
 
-    videos_folder = os.path.join(playlist_path(playlist), "videos")
     upload_log = []
     upload_running = True
 
@@ -260,17 +415,21 @@ def start_upload():
         try:
             venv_python = os.path.join("venv", "bin", "python3")
             python = venv_python if os.path.exists(venv_python) else "python3"
-            proc = subprocess.Popen(
-                [python, "upload.py", "--account", account, "--videos-folder", videos_folder],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            for line in proc.stdout:
-                upload_log.append(line.rstrip())
-            proc.wait()
+            for pl in playlists:
+                videos_folder = os.path.join(playlist_path(pl), "videos")
+                upload_log.append(f"▶ Uploading subtopic: {pl}")
+                proc = subprocess.Popen(
+                    [python, "upload.py", "--account", account, "--videos-folder", videos_folder],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
+                for line in proc.stdout:
+                    upload_log.append(line.rstrip())
+                proc.wait()
+                upload_log.append(f"✓ Done: {pl}")
         except Exception as e:
-            upload_log.append(f"Fehler: {e}")
+            upload_log.append(f"Error: {e}")
         finally:
             upload_running = False
 
@@ -289,7 +448,7 @@ def delete_video(playlist):
     filename = secure_filename(data.get("filename", ""))
     folder = os.path.join(playlist_path(playlist), "videos")
     video_path = os.path.join(folder, filename)
-    json_path = video_path.replace(".mp4", ".json")
+    json_path = os.path.splitext(video_path)[0] + ".json"
     if os.path.exists(video_path):
         os.remove(video_path)
     if os.path.exists(json_path):

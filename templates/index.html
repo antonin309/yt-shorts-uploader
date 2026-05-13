@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>YT Shorts Uploader 2000</title>
+<title>Govinda v2.0 — YT Shorts Uploader</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -11,13 +11,13 @@
     font-family: 'Tahoma', 'Arial', sans-serif;
     font-size: 11px;
     min-height: 100vh;
-    padding: 20px;
+    padding: 16px;
     background-image:
       radial-gradient(circle at 20% 50%, #006666 0%, transparent 50%),
       radial-gradient(circle at 80% 20%, #004444 0%, transparent 40%);
   }
 
-  .desktop { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .desktop { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
   .window {
     background: #d4d0c8;
@@ -25,41 +25,41 @@
     border-color: #ffffff #808080 #808080 #ffffff;
     box-shadow: 2px 2px 0 #000;
     width: 100%;
-    max-width: 800px;
+    max-width: 860px;
   }
 
   .titlebar {
     background: linear-gradient(to right, #0a246a, #a6caf0);
     padding: 3px 6px;
     display: flex; align-items: center; justify-content: space-between; height: 22px;
+    user-select: none;
   }
   .titlebar-title { color: white; font-weight: bold; font-size: 11px; }
   .win-btns { display: flex; gap: 2px; }
   .win-btn {
     width: 16px; height: 14px; background: #d4d0c8;
     border: 1px solid; border-color: #fff #808080 #808080 #fff;
-    font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; cursor: default; display: flex; align-items: center; justify-content: center;
   }
 
   .window-body { padding: 8px; }
 
-  /* Step indicator */
+  /* Steps */
   .steps {
     display: flex; align-items: center; margin-bottom: 10px;
     background: #c0bdb5; border: 2px solid; border-color: #808080 #fff #fff #808080;
-    padding: 4px 8px; gap: 4px;
+    padding: 4px 8px; gap: 4px; flex-wrap: wrap;
   }
   .step {
     display: flex; align-items: center; gap: 4px;
-    padding: 3px 10px; background: #d4d0c8;
+    padding: 4px 14px; background: #d4d0c8;
     border: 1px solid; border-color: #fff #808080 #808080 #fff;
-    cursor: pointer; font-size: 10px; color: #555;
+    cursor: pointer; font-size: 10px; color: #555; font-weight: bold;
   }
-  .step.active { background: #0a246a; color: white; font-weight: bold; border-color: #4a70a0 #001040 #001040 #4a70a0; }
-  .step.done { background: #d4d0c8; color: #0a246a; font-weight: bold; }
+  .step.active { background: #0a246a; color: white; border-color: #4a70a0 #001040 #001040 #4a70a0; }
+  .step.done { color: #0a246a; }
   .step-arrow { color: #808080; font-size: 10px; }
 
-  /* Panels */
   .panel { display: none; }
   .panel.active { display: block; }
 
@@ -70,168 +70,274 @@
     padding: 2px 4px; font-family: 'Tahoma', Arial, sans-serif; font-size: 11px; width: 100%;
   }
   textarea { resize: vertical; }
+  input[type="radio"], input[type="checkbox"] { margin-right: 3px; }
 
   .btn {
     background: #d4d0c8; border: 2px solid; border-color: #fff #808080 #808080 #fff;
-    padding: 4px 12px; font-family: 'Tahoma', Arial, sans-serif; font-size: 11px; cursor: pointer; font-weight: bold;
+    padding: 4px 12px; font-family: 'Tahoma', Arial, sans-serif;
+    font-size: 11px; cursor: pointer; font-weight: bold;
   }
   .btn:active { border-color: #808080 #fff #fff #808080; }
+  .btn:disabled { color: #aaa; cursor: default; }
   .btn-primary { background: linear-gradient(to bottom, #4a90d9, #1a5fb4); color: white; border-color: #6ab0f0 #0a3a8a #0a3a8a #6ab0f0; }
-  .btn-green { background: linear-gradient(to bottom, #4caf50, #2e7d32); color: white; border-color: #80e080 #1b5e20 #1b5e20 #80e080; }
-  .btn-danger { color: #cc0000; }
+  .btn-green  { background: linear-gradient(to bottom, #4caf50, #2e7d32); color: white; border-color: #80e080 #1b5e20 #1b5e20 #80e080; }
+  .btn-red    { background: linear-gradient(to bottom, #e53935, #b71c1c); color: white; border-color: #ff6659 #7f0000 #7f0000 #ff6659; }
+  .btn-sm     { padding: 2px 8px; font-size: 10px; }
 
   fieldset { border: 2px solid; border-color: #808080 #fff #fff #808080; padding: 6px 8px; margin-bottom: 8px; }
   legend { font-weight: bold; padding: 0 4px; background: #d4d0c8; }
 
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .row { margin-bottom: 6px; }
-  .flex { display: flex; gap: 6px; align-items: flex-end; }
+  .flex { display: flex; gap: 6px; align-items: center; }
 
-  /* Account selector */
+  /* ── STEP 1: ACCOUNTS ── */
   .account-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px;
     margin-bottom: 8px;
   }
   .account-card {
     background: #d4d0c8; border: 2px solid; border-color: #fff #808080 #808080 #fff;
-    padding: 10px 12px; cursor: pointer; text-align: center;
-    transition: none;
+    padding: 10px 10px 8px; cursor: pointer; position: relative;
   }
   .account-card:hover { background: #c8c4bc; }
-  .account-card.active { background: #0a246a; color: white; border-color: #4a70a0 #001040 #001040 #4a70a0; }
-  .account-card-icon { font-size: 22px; margin-bottom: 4px; }
+  .account-card.active {
+    background: #ddeeff; border-color: #0a246a;
+  }
+  .account-card-icon { font-size: 22px; margin-bottom: 3px; }
   .account-card-name { font-weight: bold; font-size: 12px; }
+  .account-card-ch { font-size: 9px; color: #555; margin-top: 2px; }
+  .account-card-subs { font-size: 9px; color: #0a246a; font-weight: bold; }
 
-  /* Playlist grid */
-  .playlist-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px;
+  .acc-trash {
+    position: absolute; top: 5px; right: 5px;
+    background: transparent; border: 1px solid transparent;
+    cursor: pointer; font-size: 12px; color: #cc0000;
+    opacity: 0; padding: 1px 3px; line-height: 1;
+    transition: opacity 0.1s;
   }
-  .playlist-card {
-    background: #d4d0c8; border: 2px solid; border-color: #fff #808080 #808080 #fff;
-    padding: 8px 10px; cursor: pointer;
-  }
-  .playlist-card:hover { background: #c8c4bc; }
-  .playlist-card.active { background: #ddeeff; border-color: #0a246a; }
-  .playlist-card-icon { font-size: 18px; }
-  .playlist-card-name { font-weight: bold; margin-top: 3px; }
-  .playlist-card-sub { color: #555; font-size: 10px; }
+  .account-card:hover .acc-trash { opacity: 1; }
+  .acc-trash:hover { background: #ffeaea; border-color: #cc0000; }
 
-  /* Tabs (inner) */
+  .acc-connect {
+    display: block; width: 100%; margin-top: 6px;
+    background: linear-gradient(to bottom, #4a90d9, #1a5fb4);
+    color: white; border: 1px solid #0a3a8a;
+    padding: 3px 0; font-size: 10px; font-weight: bold;
+    cursor: pointer; font-family: 'Tahoma', Arial, sans-serif;
+    letter-spacing: 0.5px;
+  }
+  .acc-connect:hover { background: linear-gradient(to bottom, #5aa0e9, #2a6fc4); }
+  .acc-connect:disabled { background: #aaa; cursor: default; border-color: #888; }
+  .acc-connect.done { background: linear-gradient(to bottom, #4caf50, #2e7d32); border-color: #1b5e20; }
+  .acc-connect.error { background: linear-gradient(to bottom, #e53935, #b71c1c); border-color: #7f0000; }
+
+  /* ── STEP 2: VIDEOS + SUBTOPICS ── */
+  .videos-layout {
+    display: grid; grid-template-columns: 210px 1fr; gap: 8px;
+    min-height: 320px;
+  }
+
+  .subtopic-sidebar {
+    background: white; border: 2px solid; border-color: #808080 #fff #fff #808080;
+    display: flex; flex-direction: column;
+  }
+  .subtopic-sidebar-header {
+    background: #0a246a; color: white; font-weight: bold;
+    padding: 4px 8px; font-size: 10px; letter-spacing: 1px;
+  }
+  .subtopic-list { flex: 1; overflow-y: auto; }
+  .subtopic-item {
+    padding: 7px 8px; border-bottom: 1px solid #e0ddd6;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  }
+  .subtopic-item:hover { background: #eef4ff; }
+  .subtopic-item.active { background: #0a246a; color: white; }
+  .subtopic-item-left { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .subtopic-item-name { font-weight: bold; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .subtopic-item-count { font-size: 9px; opacity: 0.65; }
+  .subtopic-del {
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; color: #cc0000; padding: 0 2px;
+    opacity: 0; flex-shrink: 0;
+  }
+  .subtopic-item:hover .subtopic-del { opacity: 1; }
+  .subtopic-item.active .subtopic-del { opacity: 0.6; color: #ffaaaa; }
+  .subtopic-item.active .subtopic-del:hover { opacity: 1; }
+
+  .subtopic-sidebar-footer {
+    border-top: 1px solid #ccc; padding: 6px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .subtopic-add-row { display: flex; gap: 4px; }
+  .subtopic-add-row input { flex: 1; }
+
+  .subtopic-editor-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: #999; gap: 6px; padding: 20px; text-align: center;
+    border: 2px solid; border-color: #808080 #fff #fff #808080;
+    background: white;
+  }
+  .subtopic-editor-empty .arrow { font-size: 28px; color: #0a246a; }
+
+  /* Inner tabs */
   .tabs { display: flex; border-bottom: 2px solid #808080; margin-bottom: 8px; }
   .tab {
-    padding: 3px 10px; background: #d4d0c8;
+    padding: 3px 12px; background: #c0bdb5;
     border: 1px solid; border-color: #fff #808080 transparent #fff;
     border-bottom: none; cursor: pointer; font-size: 11px; margin-bottom: -2px;
   }
-  .tab.active { border-bottom: 2px solid #d4d0c8; z-index: 1; font-weight: bold; }
+  .tab.active { background: #d4d0c8; border-bottom: 2px solid #d4d0c8; z-index: 1; font-weight: bold; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
   /* Drop zone */
   .dropzone {
     border: 2px dashed #808080; background: white;
-    padding: 14px; text-align: center; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 18px; text-align: center; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
   }
   .dropzone.drag-over { background: #e8f4ff; border-color: #0a246a; }
 
   /* Video list */
   .video-list {
     background: white; border: 2px solid; border-color: #808080 #fff #fff #808080;
-    min-height: 40px; max-height: 120px; overflow-y: auto;
+    min-height: 36px; max-height: 130px; overflow-y: auto;
   }
-  .video-item { padding: 3px 6px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d4d0c8; }
+  .video-item {
+    padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #e0e0e0; font-size: 10px;
+  }
   .video-item:hover { background: #0a246a; color: white; }
-  .video-item:hover .btn-danger { color: #ffaaaa; background: transparent; border-color: transparent; }
+  .video-item-del {
+    background: none; border: none; cursor: pointer; color: #cc0000;
+    font-size: 11px; padding: 0 3px;
+  }
+  .video-item:hover .video-item-del { color: #ffaaaa; }
 
-  /* Per-day buttons */
-  .per-day-btn { min-width: 34px; text-align: center; }
-  .per-day-btn.active { background: linear-gradient(to bottom, #0a246a, #1a5fb4); color: white; border-color: #4a70a0 #001040 #001040 #4a70a0; }
+  .caption-paste { width: 100%; min-height: 90px; font-size: 11px; }
+  .caption-list-display {
+    background: white; border: 2px solid; border-color: #808080 #fff #fff #808080;
+    max-height: 120px; overflow-y: auto;
+  }
+  .caption-item { padding: 3px 8px; border-bottom: 1px solid #e0e0e0; font-size: 10px; }
+  .caption-item:hover { background: #f0f0f0; }
 
-  /* Slot labels */
+  /* ── STEP 3: SCHEDULE ── */
+  .perday-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .perday-count {
+    font-size: 26px; font-weight: bold; color: #0a246a;
+    border: 2px solid; border-color: #808080 #fff #fff #808080;
+    padding: 2px 10px; background: white; min-width: 46px; text-align: center;
+    line-height: 1.2;
+  }
+  .perday-label { font-size: 10px; color: #555; }
+
+  .per-day-btn {
+    min-width: 30px; text-align: center; padding: 3px 8px; font-size: 11px;
+  }
+  .per-day-btn.active {
+    background: linear-gradient(to bottom, #0a246a, #1a5fb4);
+    color: white; border-color: #4a70a0 #001040 #001040 #4a70a0;
+  }
+
+  .slots-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 4px;
+  }
   .slot-label {
     display: flex; align-items: center; gap: 4px;
-    padding: 3px 6px; border: 1px solid #d4d0c8; background: #f0f0f0; cursor: pointer; user-select: none;
+    padding: 4px 8px; border: 1px solid #c0bdb5; cursor: pointer;
+    user-select: none; font-size: 10px; background: #e8e6e0;
   }
   .slot-label:has(input:checked) { background: #ddeeff; border-color: #0a246a; font-weight: bold; }
+
+  /* Subtopic pills for schedule */
+  .subtopic-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .subtopic-pill {
+    padding: 4px 12px; border: 2px solid #808080; cursor: pointer;
+    background: #d4d0c8; font-size: 11px; user-select: none;
+    border-color: #fff #808080 #808080 #fff;
+  }
+  .subtopic-pill.active { background: #ddeeff; border-color: #0a246a; font-weight: bold; }
 
   /* Schedule table */
   .schedule-table { width: 100%; border-collapse: collapse; background: white; font-size: 10px; }
   .schedule-table th { background: #0a246a; color: white; padding: 3px 6px; text-align: left; }
   .schedule-table td { padding: 2px 6px; border-bottom: 1px solid #d4d0c8; }
-  .schedule-table tr:nth-child(even) td { background: #f0f0f0; }
+  .schedule-table tr:nth-child(even) td { background: #f4f4f4; }
 
-  /* Log */
+  /* ── STEP 4: UPLOAD ── */
   .log-box {
     background: black; color: #00ff00; font-family: 'Courier New', monospace; font-size: 10px;
-    padding: 6px; min-height: 100px; max-height: 180px; overflow-y: auto;
+    padding: 6px; min-height: 110px; max-height: 200px; overflow-y: auto;
     border: 2px solid; border-color: #808080 #fff #fff #808080; white-space: pre-wrap;
   }
-
-  /* Progress */
-  .progress-bar { height: 16px; background: white; border: 2px solid; border-color: #808080 #fff #fff #808080; overflow: hidden; }
+  .progress-bar { height: 18px; background: white; border: 2px solid; border-color: #808080 #fff #fff #808080; overflow: hidden; }
   .progress-fill {
     height: 100%; background: linear-gradient(to right, #0a246a, #4a90d9);
-    width: 0%; display: flex; align-items: center; padding-left: 4px; color: white; font-size: 9px;
+    width: 0%; display: flex; align-items: center; padding-left: 6px; color: white; font-size: 9px;
+    transition: width 0.3s;
   }
 
-  /* Caption paste area */
-  .caption-paste { width: 100%; min-height: 80px; font-size: 11px; }
-  .caption-list-display { background: white; border: 2px solid; border-color: #808080 #fff #fff #808080; max-height: 140px; overflow-y: auto; }
-  .caption-item { padding: 3px 8px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
-  .caption-item:hover { background: #f0f0f0; }
-
-  /* Status */
+  /* Status bar */
   .statusbar {
-    background: #d4d0c8; border-top: 2px solid; border-color: #808080 transparent transparent transparent;
+    background: #d4d0c8; border-top: 2px solid #808080;
     padding: 2px 6px; display: flex; gap: 8px; font-size: 10px;
   }
   .statusbar-panel { border: 1px solid; border-color: #808080 #fff #fff #808080; padding: 1px 6px; flex: 1; }
 
   .blink { animation: blink 1s step-end infinite; }
   @keyframes blink { 50% { opacity: 0; } }
-  input[type="radio"], input[type="checkbox"] { margin-right: 3px; }
+
+  .tag-badge {
+    display: inline-block; background: #ddeeff; border: 1px solid #0a246a;
+    padding: 1px 6px; font-size: 9px; color: #0a246a; font-weight: bold; margin: 1px;
+  }
 </style>
 </head>
 <body>
 <div class="desktop">
 
-  <!-- Title -->
+  <!-- Title bar -->
   <div class="window">
     <div class="titlebar">
-      <div class="titlebar-title">📼 YT Shorts Uploader 2000</div>
-      <div class="win-btns"><div class="win-btn">_</div><div class="win-btn">□</div><div class="win-btn">✕</div></div>
+      <div class="titlebar-title">📼 Govinda v2.0 — YouTube Shorts Uploader</div>
+      <div class="win-btns">
+        <div class="win-btn">_</div><div class="win-btn">□</div><div class="win-btn">✕</div>
+      </div>
     </div>
   </div>
 
-  <!-- Main -->
+  <!-- Main window -->
   <div class="window">
     <div class="titlebar">
       <div class="titlebar-title" id="mainTitle">🎵 Upload Manager</div>
-      <div class="win-btns"><div class="win-btn">_</div><div class="win-btn">□</div><div class="win-btn">✕</div></div>
+      <div class="win-btns">
+        <div class="win-btn">_</div><div class="win-btn">□</div><div class="win-btn">✕</div>
+      </div>
     </div>
     <div class="window-body">
 
-      <!-- Step indicator -->
+      <!-- Steps -->
       <div class="steps">
         <div class="step active" id="step1" onclick="goStep(1)">① Account</div>
         <div class="step-arrow">▶</div>
-        <div class="step" id="step2" onclick="goStep(2)">② Playlist</div>
+        <div class="step" id="step2" onclick="goStep(2)">② Videos</div>
         <div class="step-arrow">▶</div>
-        <div class="step" id="step3" onclick="goStep(3)">③ Videos</div>
+        <div class="step" id="step3" onclick="goStep(3)">③ Schedule</div>
         <div class="step-arrow">▶</div>
-        <div class="step" id="step4" onclick="goStep(4)">④ Schedule</div>
-        <div class="step-arrow">▶</div>
-        <div class="step" id="step5" onclick="goStep(5)">⑤ Upload</div>
+        <div class="step" id="step4" onclick="goStep(4)">④ Upload</div>
       </div>
 
-      <!-- STEP 1: Account -->
+      <!-- ═══════════════════════════════════════════════
+           STEP 1 — ACCOUNT
+      ════════════════════════════════════════════════ -->
       <div class="panel active" id="panel1">
         <fieldset>
           <legend>Select Account</legend>
           <div class="account-grid" id="accountGrid"></div>
-          <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
-            <input type="text" id="newAccountName" placeholder="Add new account..." style="width:200px">
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid #bbb">
+            <input type="text" id="newAccountName" placeholder="New account name..." style="width:220px">
             <button class="btn" onclick="addAccount()">+ Add</button>
           </div>
         </fieldset>
@@ -240,191 +346,165 @@
         </div>
       </div>
 
-      <!-- STEP 2: Playlist -->
+      <!-- ═══════════════════════════════════════════════
+           STEP 2 — VIDEOS + SUBTOPICS
+      ════════════════════════════════════════════════ -->
       <div class="panel" id="panel2">
-        <fieldset>
-          <legend>Select Playlist — <span id="accountLabel">—</span></legend>
-          <div class="playlist-grid" id="playlistGrid"></div>
-          <div style="margin-top:8px;border-top:1px solid #bbb;padding-top:6px">
-            <b>+ New Playlist</b>
-            <div class="grid-2" style="margin-top:4px">
-              <div><label>ID</label><input type="text" id="newPlaylistName" placeholder="e.g. deep-house"></div>
-              <div><label>Display Name</label><input type="text" id="newPlaylistDisplay" placeholder="Deep House — Sunset Vibes"></div>
-            </div>
-            <div style="margin-top:4px;text-align:right">
-              <button class="btn" onclick="createPlaylist()">Create</button>
+        <div class="videos-layout">
+
+          <!-- Sidebar: subtopic list -->
+          <div class="subtopic-sidebar">
+            <div class="subtopic-sidebar-header">📂 SUBTOPICS — <span id="sidebarAccount">—</span></div>
+            <div class="subtopic-list" id="subtopicList"></div>
+            <div class="subtopic-sidebar-footer">
+              <div style="font-weight:bold;font-size:10px;color:#555">+ New Subtopic</div>
+              <input type="text" id="newSubtopicDisplay" placeholder="Display name..." style="font-size:10px">
+              <input type="text" id="newSubtopicId" placeholder="ID (e.g. deep-house)" style="font-size:10px">
+              <button class="btn btn-sm btn-primary" onclick="createSubtopic()">Create</button>
             </div>
           </div>
-        </fieldset>
-        <div class="flex" style="justify-content:space-between">
+
+          <!-- Right: editor -->
+          <div id="subtopicEditor">
+            <div class="subtopic-editor-empty">
+              <div class="arrow">←</div>
+              <div><b>Select a subtopic</b> from the list<br>or create a new one</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex" style="justify-content:space-between;margin-top:8px">
           <button class="btn" onclick="goStep(1)">◀ Back</button>
-          <button class="btn btn-primary" onclick="goStep(3)">Next ▶</button>
+          <button class="btn btn-primary" onclick="goStep(3)">Next: Schedule ▶</button>
         </div>
       </div>
 
-      <!-- STEP 3: Videos & Captions -->
+      <!-- ═══════════════════════════════════════════════
+           STEP 3 — SCHEDULE
+      ════════════════════════════════════════════════ -->
       <div class="panel" id="panel3">
-        <div class="tabs">
-          <div class="tab active" onclick="switchInnerTab('tab-videos')">📁 Videos</div>
-          <div class="tab" onclick="switchInnerTab('tab-captions')">💬 Hooks / Captions</div>
-          <div class="tab" onclick="switchInnerTab('tab-settings')">⚙️ Settings</div>
-        </div>
 
-        <div id="tab-videos" class="tab-content active">
-          <fieldset>
-            <legend>Add Videos</legend>
-            <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-              <div style="font-size:24px">📼</div>
-              <div><b>Drop videos here</b> or click to browse</div>
-              <div style="color:#666">MP4 files only</div>
-            </div>
-            <input type="file" id="fileInput" accept=".mp4" multiple style="display:none" onchange="uploadFiles(this.files)">
-          </fieldset>
-          <fieldset>
-            <legend>Queue (<span id="videoCount">0</span> videos)</legend>
-            <div class="video-list" id="videoList"></div>
-          </fieldset>
-        </div>
-
-        <div id="tab-captions" class="tab-content">
-          <fieldset>
-            <legend>Hooks / Captions — one per line</legend>
-            <div class="row">
-              <label>Paste or type your hooks (one per line):</label>
-              <textarea id="captionPaste" class="caption-paste" placeholder="Feel the deep 🌊&#10;Sunset never ends ✨&#10;Let the bass breathe 🎧&#10;..."></textarea>
-            </div>
-            <div class="flex">
-              <button class="btn btn-primary" onclick="saveCaptionsFromPaste()">💾 Save</button>
-              <span style="color:#666" id="captionSaveStatus"></span>
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend>Saved Captions (<span id="captionCount">0</span>)</legend>
-            <div class="caption-list-display" id="captionListDisplay"></div>
-          </fieldset>
-        </div>
-
-        <div id="tab-settings" class="tab-content">
-          <fieldset>
-            <legend>Playlist Settings</legend>
-            <div class="row">
-              <label>Hashtags</label>
-              <input type="text" id="settingsHashtags">
-            </div>
-            <div class="row">
-              <label>Tags</label>
-              <input type="text" id="settingsTags">
-            </div>
-            <div class="row">
-              <label>Language</label>
-              <select id="settingsLanguage">
-                <option value="en">🇬🇧 English</option>
-                <option value="de">🇩🇪 Deutsch</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" onclick="saveSettings()">💾 Save</button>
-          </fieldset>
-        </div>
-
-        <div class="flex" style="justify-content:space-between;margin-top:6px">
-          <button class="btn" onclick="goStep(2)">◀ Back</button>
-          <button class="btn btn-primary" onclick="goStep(4)">Next: Schedule ▶</button>
-        </div>
-      </div>
-
-      <!-- STEP 4: Schedule -->
-      <div class="panel" id="panel4">
-        <fieldset>
-          <legend>Schedule</legend>
-          <div class="grid-2">
-            <div class="row">
-              <label>Start Date</label>
-              <input type="date" id="startDate" value="{{ today }}">
-            </div>
-            <div class="row">
-              <label>Privacy</label>
-              <select id="privacy">
-                <option value="public">🌍 Public</option>
-                <option value="private">🔒 Private</option>
-                <option value="unlisted">🔗 Unlisted</option>
-              </select>
-            </div>
+        <!-- Subtopic selection (hidden when only 1) -->
+        <fieldset id="subtopicSelectionBox" style="display:none">
+          <legend>Active Subtopics</legend>
+          <div style="font-size:10px;color:#555;margin-bottom:4px">
+            Videos will be interleaved across selected subtopics within each day.
           </div>
+          <div class="subtopic-pills" id="scheduleSubtopicPills"></div>
         </fieldset>
+
+        <div class="grid-2">
+          <fieldset>
+            <legend>Start Date</legend>
+            <input type="date" id="startDate" value="{{ today }}">
+          </fieldset>
+          <fieldset>
+            <legend>Privacy</legend>
+            <select id="privacy">
+              <option value="public">🌍 Public</option>
+              <option value="private">🔒 Private</option>
+              <option value="unlisted">🔗 Unlisted</option>
+            </select>
+          </fieldset>
+        </div>
 
         <fieldset>
           <legend>Posting Frequency</legend>
           <div class="row">
-            <label>Videos per day</label>
-            <div class="flex" style="gap:4px;margin-top:3px">
-              <button class="btn per-day-btn active" onclick="setPerDay(1,this)">1x</button>
-              <button class="btn per-day-btn" onclick="setPerDay(2,this)">2x</button>
-              <button class="btn per-day-btn" onclick="setPerDay(3,this)">3x</button>
-              <button class="btn per-day-btn" onclick="setPerDay(4,this)">4x</button>
-              <button class="btn per-day-btn" onclick="setPerDay(5,this)">5x</button>
-              <button class="btn per-day-btn" onclick="setPerDay(6,this)">6x</button>
+            <div class="perday-row">
+              <div>
+                <div class="perday-count" id="perdayCount">0</div>
+                <div class="perday-label">per day</div>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:10px;color:#555;margin-bottom:4px">Quick select:</div>
+                <div class="flex" style="flex-wrap:wrap;gap:3px">
+                  <button class="btn btn-sm per-day-btn" data-n="1" onclick="setPerDay(1,this)">1×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="2" onclick="setPerDay(2,this)">2×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="3" onclick="setPerDay(3,this)">3×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="4" onclick="setPerDay(4,this)">4×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="5" onclick="setPerDay(5,this)">5×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="6" onclick="setPerDay(6,this)">6×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="7" onclick="setPerDay(7,this)">7×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="8" onclick="setPerDay(8,this)">8×</button>
+                  <button class="btn btn-sm per-day-btn" data-n="9" onclick="setPerDay(9,this)">9×</button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="row" style="margin-top:6px">
-            <label>Time Slots</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:3px">
-              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="0"> 🌄 Early Morning (6–8 AM)</label>
-              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="1" checked> 🌅 Morning (8–11 AM)</label>
-              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="2"> 🥗 Midday (11 AM–1 PM)</label>
-              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="3" checked> ☀️ Afternoon (1–4 PM)</label>
-              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="4" checked> 🌆 Evening (6–8 PM)</label>
-              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="5" checked> 🌙 Late Night (9–11 PM)</label>
+            <label style="margin-bottom:4px">Time Slots</label>
+            <div class="slots-grid">
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="0"> 🌄 Early Morning (5–7)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="1" checked> ☀️ Morning (7–9)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="2"> 🌤 Late Morning (9–11)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="3"> 🥗 Midday (11–13)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="4"> ☀️ Afternoon (13–15)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="5"> 🌇 Late Afternoon (15–17)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="6" checked> 🌆 Evening (17–19)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="7"> 🌃 Night (19–21)</label>
+              <label class="slot-label"><input type="checkbox" class="slot-cb" data-slot="8" checked> 🌙 Late Night (21–23)</label>
             </div>
           </div>
           <div class="row" style="margin-top:4px">
-            <label><input type="checkbox" id="randomTimes" checked> Randomize minutes (less bot-like)</label>
+            <label><input type="checkbox" id="randomTimes" checked> Randomize minutes within slot (less bot-like)</label>
           </div>
         </fieldset>
 
         <fieldset>
           <legend>Captions</legend>
-          <label><input type="radio" name="captionMode" value="random" checked onchange="toggleCaption()"> Random from saved list</label>
-          <label style="margin-top:3px"><input type="radio" name="captionMode" value="fixed" onchange="toggleCaption()"> Same caption for all</label>
-          <div id="fixedCaptionRow" style="display:none;margin-top:4px">
-            <input type="text" id="fixedCaption" placeholder="Your caption...">
+          <div class="flex">
+            <label><input type="radio" name="captionMode" value="random" checked onchange="toggleCaption()"> Random from subtopic's saved captions</label>
+            <label><input type="radio" name="captionMode" value="fixed" onchange="toggleCaption()"> Same caption for all</label>
+          </div>
+          <div id="fixedCaptionRow" style="display:none;margin-top:6px">
+            <input type="text" id="fixedCaption" placeholder="Your caption for all videos...">
           </div>
         </fieldset>
 
-        <div class="flex" style="justify-content:space-between">
-          <button class="btn" onclick="goStep(3)">◀ Back</button>
-          <button class="btn btn-primary" onclick="createSchedule()">📅 Create Schedule</button>
+        <div class="flex" style="justify-content:space-between;margin-bottom:8px">
+          <button class="btn" onclick="goStep(2)">◀ Back</button>
+          <button class="btn btn-primary" onclick="createSchedule()">📅 Generate Schedule</button>
         </div>
 
-        <div id="scheduleResult" style="margin-top:8px;display:none">
+        <div id="scheduleResult" style="display:none">
           <fieldset>
-            <legend>Scheduled Uploads</legend>
-            <div style="overflow-x:auto">
+            <legend>Preview — <span id="scheduleCount">0</span> videos scheduled</legend>
+            <div style="overflow-x:auto; max-height:220px; overflow-y:auto">
               <table class="schedule-table">
-                <thead><tr><th>Video</th><th>Date</th><th>Slot</th><th>Time (UTC)</th><th>Caption</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Subtopic</th><th>Video</th><th>Date</th>
+                    <th>Slot</th><th>Time (UTC)</th><th>Caption</th>
+                  </tr>
+                </thead>
                 <tbody id="scheduleBody"></tbody>
               </table>
             </div>
           </fieldset>
           <div style="text-align:right;margin-top:6px">
-            <button class="btn btn-green" onclick="goStep(5)">🚀 Next: Upload</button>
+            <button class="btn btn-green" onclick="goStep(4)">🚀 Continue to Upload ▶</button>
           </div>
         </div>
       </div>
 
-      <!-- STEP 5: Upload -->
-      <div class="panel" id="panel5">
+      <!-- ═══════════════════════════════════════════════
+           STEP 4 — UPLOAD
+      ════════════════════════════════════════════════ -->
+      <div class="panel" id="panel4">
         <fieldset>
-          <legend>Upload</legend>
+          <legend>Upload Summary</legend>
           <div class="grid-2" style="margin-bottom:6px">
             <div><label>Account</label><b id="uploadAccount">—</b></div>
-            <div><label>Playlist</label><b id="uploadPlaylist">—</b></div>
+            <div><label>Subtopics</label><b id="uploadSubtopics">—</b></div>
           </div>
           <div class="row">
             <div class="progress-bar"><div class="progress-fill" id="progressFill">ready</div></div>
           </div>
-          <div class="flex" style="margin-top:6px">
+          <div class="flex" style="margin-top:8px">
             <button class="btn btn-green" id="uploadBtn" onclick="startUpload()">🚀 Start Upload</button>
-            <span id="logBlink" class="blink" style="display:none;color:#0a246a">● running</span>
+            <span id="logBlink" class="blink" style="display:none;color:#0a246a;font-weight:bold">● uploading...</span>
           </div>
         </fieldset>
         <fieldset>
@@ -432,7 +512,7 @@
           <div class="log-box" id="logBox">Ready...</div>
         </fieldset>
         <div class="flex" style="justify-content:space-between;margin-top:6px">
-          <button class="btn" onclick="goStep(4)">◀ Back</button>
+          <button class="btn" onclick="goStep(3)">◀ Back</button>
         </div>
       </div>
 
@@ -440,58 +520,101 @@
 
     <div class="statusbar">
       <div class="statusbar-panel" id="statusMsg">Select an account to get started</div>
-      <div class="statusbar-panel" style="max-width:200px" id="statusInfo">—</div>
+      <div class="statusbar-panel" style="max-width:220px" id="statusInfo">—</div>
     </div>
   </div>
 
-</div>
+</div><!-- /desktop -->
 
 <script>
 const PLAYLISTS_BY_ACCOUNT = {{ playlists_by_account | tojson }};
 const ACCOUNTS = {{ accounts | tojson }};
 
 let currentAccount = '';
-let currentPlaylist = '';
-let currentPlaylistDisplay = '';
-let perDay = 1;
+let currentSubtopic = '';     // id of subtopic open in editor
+let currentSubtopicDisplay = '';
+let activeScheduleSubtopics = []; // playlist ids selected for scheduling
 let pollInterval = null;
 
 const ACCOUNT_ICONS = {
   'playlistpanda': '🐼',
   'antonin-mp3': '🎵',
   'sunset-vibes': '🌅',
+  'jj': '👤',
+  'default': '👤',
 };
 
+// Priority order for per-day auto-selection (slot indices 0–8)
+const SLOT_PRIORITY = [1, 6, 8, 3, 4, 0, 2, 7, 5];
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
 window.onload = () => {
   renderAccounts();
+  initSlotSync();
+  updatePerdayCount();
 };
 
-// Step navigation
+// ─────────────────────────────────────────────
+// Navigation
+// ─────────────────────────────────────────────
 function goStep(n) {
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 4; i++) {
     document.getElementById(`panel${i}`).classList.toggle('active', i === n);
-    const step = document.getElementById(`step${i}`);
-    step.classList.remove('active', 'done');
-    if (i === n) step.classList.add('active');
-    else if (i < n) step.classList.add('done');
+    const s = document.getElementById(`step${i}`);
+    s.classList.remove('active', 'done');
+    if (i === n) s.classList.add('active');
+    else if (i < n) s.classList.add('done');
   }
-  if (n === 5) {
-    document.getElementById('uploadAccount').textContent = currentAccount;
-    document.getElementById('uploadPlaylist').textContent = currentPlaylistDisplay || currentPlaylist;
-  }
+  if (n === 3) enterScheduleStep();
+  if (n === 4) enterUploadStep();
 }
 
-// Accounts
+// ─────────────────────────────────────────────
+// STEP 1 — ACCOUNTS
+// ─────────────────────────────────────────────
 function renderAccounts() {
   const grid = document.getElementById('accountGrid');
   grid.innerHTML = '';
   ACCOUNTS.forEach(acc => {
+    const icon = ACCOUNT_ICONS[acc] || ACCOUNT_ICONS['default'];
     const div = document.createElement('div');
     div.className = 'account-card' + (acc === currentAccount ? ' active' : '');
-    div.innerHTML = `<div class="account-card-icon">${ACCOUNT_ICONS[acc] || '👤'}</div>
-      <div class="account-card-name">${acc}</div>`;
-    div.onclick = () => selectAccount(acc, div);
+    div.dataset.acc = acc;
+    div.innerHTML = `
+      <button class="acc-trash" title="Delete account" onclick="deleteAccount(event,'${acc}')">🗑</button>
+      <div class="account-card-icon">${icon}</div>
+      <div class="account-card-name">${acc}</div>
+      <div class="account-card-ch" id="ch-${acc}">loading...</div>
+      <div class="account-card-subs" id="subs-${acc}"></div>
+      <button class="acc-connect" id="conn-${acc}" onclick="connectAccount(event,'${acc}')">🔗 Connect Google Account</button>`;
+    div.onclick = (e) => {
+      if (e.target.classList.contains('acc-trash') || e.target.classList.contains('acc-connect')) return;
+      selectAccount(acc, div);
+    };
     grid.appendChild(div);
+    loadChannelInfo(acc);
+  });
+}
+
+function loadChannelInfo(name) {
+  fetch(`/account-info/${name}`).then(r => r.json()).then(info => {
+    const ch   = document.getElementById(`ch-${name}`);
+    const subs = document.getElementById(`subs-${name}`);
+    const conn = document.getElementById(`conn-${name}`);
+    if (!ch) return;
+    if (info && info.channelName) {
+      ch.textContent = '📺 ' + info.channelName;
+      if (subs && info.subscribers !== '?') subs.textContent = Number(info.subscribers).toLocaleString() + ' subs';
+      if (conn) { conn.textContent = '✓ Connected'; conn.className = 'acc-connect done'; conn.disabled = true; }
+    } else {
+      ch.textContent = '⚠ Not connected';
+      if (conn) { conn.textContent = '🔗 Connect Google Account'; conn.className = 'acc-connect'; conn.disabled = false; }
+    }
+  }).catch(() => {
+    const ch = document.getElementById(`ch-${name}`);
+    if (ch) ch.textContent = '—';
   });
 }
 
@@ -499,177 +622,523 @@ function selectAccount(name, el) {
   currentAccount = name;
   document.querySelectorAll('.account-card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+  document.getElementById('sidebarAccount').textContent = name;
   setStatus(`Account: ${name}`);
-  document.getElementById('accountLabel').textContent = name;
-  renderPlaylists();
+  setInfo(name);
+  renderSubtopicList();
 }
 
 function addAccount() {
-  const name = document.getElementById('newAccountName').value.trim().toLowerCase().replace(/ /g, '-');
+  const raw = document.getElementById('newAccountName').value.trim();
+  const name = raw.toLowerCase().replace(/\s+/g, '-');
   if (!name) return;
   fetch('/create-account', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({name})
   }).then(r => r.json()).then(d => {
-    if (d.ok) { ACCOUNTS.push(name); PLAYLISTS_BY_ACCOUNT[name] = []; renderAccounts(); setStatus(`Account "${name}" created!`); }
+    if (d.ok) {
+      ACCOUNTS.push(d.name);
+      if (!PLAYLISTS_BY_ACCOUNT[d.name]) PLAYLISTS_BY_ACCOUNT[d.name] = [];
+      document.getElementById('newAccountName').value = '';
+      renderAccounts();
+      setStatus(`Account "${d.name}" created`);
+    }
   });
 }
 
-// Playlists
-function renderPlaylists() {
-  const grid = document.getElementById('playlistGrid');
-  grid.innerHTML = '';
+function connectAccount(e, name) {
+  e.stopPropagation();
+  const btn = document.getElementById(`conn-${name}`);
+  const ch  = document.getElementById(`ch-${name}`);
+  btn.disabled = true;
+  btn.textContent = '⏳ Opening browser...';
+  btn.className = 'acc-connect';
+  if (ch) ch.textContent = 'Waiting for Google login...';
+
+  fetch(`/connect-account/${name}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) {
+        btn.textContent = '⚠ ' + d.error;
+        btn.className = 'acc-connect error';
+        btn.disabled = false;
+        return;
+      }
+      // Poll until done
+      const poll = setInterval(() => {
+        fetch(`/connect-status/${name}`).then(r => r.json()).then(s => {
+          if (s.status === 'done') {
+            clearInterval(poll);
+            btn.textContent = '✓ Connected!';
+            btn.className = 'acc-connect done';
+            if (ch) ch.textContent = 'Loading channel info...';
+            // Refresh channel info
+            setTimeout(() => loadChannelInfo(name), 800);
+          } else if (s.status?.startsWith('error:')) {
+            clearInterval(poll);
+            btn.textContent = '✗ Failed — try again';
+            btn.className = 'acc-connect error';
+            btn.disabled = false;
+            if (ch) ch.textContent = '⚠ Login failed';
+          } else {
+            // Still running
+            const dots = btn.textContent.endsWith('...') ? '' : (btn.textContent.endsWith('..') ? '...' : btn.textContent.endsWith('.') ? '..' : '.');
+            btn.textContent = '⏳ Waiting for login' + (dots || '...');
+          }
+        });
+      }, 1500);
+    });
+}
+
+function deleteAccount(e, name) {
+  e.stopPropagation();
+  if (!confirm(`Delete account "${name}"?\n\nThis removes the login token permanently.\nThis cannot be undone.`)) return;
+  fetch(`/delete-account/${name}`, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      if (d.ok) {
+        const idx = ACCOUNTS.indexOf(name);
+        if (idx > -1) ACCOUNTS.splice(idx, 1);
+        delete PLAYLISTS_BY_ACCOUNT[name];
+        if (currentAccount === name) { currentAccount = ''; setInfo('—'); }
+        renderAccounts();
+        setStatus(`Account "${name}" deleted`);
+      }
+    });
+}
+
+// ─────────────────────────────────────────────
+// STEP 2 — SUBTOPICS + VIDEOS
+// ─────────────────────────────────────────────
+function renderSubtopicList() {
+  const list = document.getElementById('subtopicList');
+  list.innerHTML = '';
   const playlists = PLAYLISTS_BY_ACCOUNT[currentAccount] || [];
   if (playlists.length === 0) {
-    grid.innerHTML = '<div style="color:#666;padding:8px">No playlists yet — create one below.</div>';
+    list.innerHTML = '<div style="padding:10px;color:#999;font-size:10px">No subtopics yet.<br>Create one below.</div>';
     return;
   }
-  const icons = ['🌅','🌃','🎤','📚','🎧','🔥','🌊','⚡'];
-  playlists.forEach((p, i) => {
+  playlists.forEach(p => {
     const div = document.createElement('div');
-    div.className = 'playlist-card' + (p.id === currentPlaylist ? ' active' : '');
-    div.innerHTML = `<div class="playlist-card-icon">${icons[i % icons.length]}</div>
-      <div class="playlist-card-name">${p.displayName || p.id}</div>
-      <div class="playlist-card-sub">${p.id}</div>`;
-    div.onclick = () => selectPlaylist(p.id, p.displayName || p.id, div);
-    grid.appendChild(div);
+    div.className = 'subtopic-item' + (p.id === currentSubtopic ? ' active' : '');
+    div.dataset.id = p.id;
+    div.innerHTML = `
+      <div class="subtopic-item-left">
+        <div class="subtopic-item-name">${p.displayName || p.id}</div>
+        <div class="subtopic-item-count" id="stcount-${p.id}">...</div>
+      </div>
+      <button class="subtopic-del" title="Delete subtopic" onclick="deleteSubtopic(event,'${p.id}','${p.displayName || p.id}')">🗑</button>`;
+    div.onclick = (e) => { if (e.target.classList.contains('subtopic-del')) return; openSubtopic(p.id, p.displayName || p.id, div); };
+    list.appendChild(div);
+    // Load video count
+    fetch(`/playlist-info/${p.id}`).then(r => r.json()).then(data => {
+      const el = document.getElementById(`stcount-${p.id}`);
+      if (el) el.textContent = `${data.videos.length} videos · ${data.captions.length} hooks`;
+    });
   });
 }
 
-function selectPlaylist(id, displayName, el) {
-  currentPlaylist = id;
-  currentPlaylistDisplay = displayName;
-  document.querySelectorAll('.playlist-card').forEach(c => c.classList.remove('active'));
+function openSubtopic(id, displayName, el) {
+  currentSubtopic = id;
+  currentSubtopicDisplay = displayName;
+  document.querySelectorAll('.subtopic-item').forEach(i => i.classList.remove('active'));
   if (el) el.classList.add('active');
-  setStatus(`Playlist: ${displayName}`);
-  setInfo(`${currentAccount} → ${displayName}`);
+  setStatus(`Editing: ${displayName}`);
+  renderSubtopicEditor(id);
+}
 
+function renderSubtopicEditor(id) {
+  const editor = document.getElementById('subtopicEditor');
+  editor.innerHTML = `
+    <div>
+      <div class="tabs">
+        <div class="tab active" id="etab-videos" onclick="switchEditorTab('videos')">📁 Videos</div>
+        <div class="tab" id="etab-captions" onclick="switchEditorTab('captions')">💬 Hooks / Captions</div>
+        <div class="tab" id="etab-settings" onclick="switchEditorTab('settings')">⚙ Settings</div>
+      </div>
+
+      <!-- Videos tab -->
+      <div id="econtent-videos" class="tab-content active">
+        <fieldset>
+          <legend>Add Videos</legend>
+          <div class="dropzone" id="dropzone-${id}" onclick="document.getElementById('fileInput-${id}').click()">
+            <div style="font-size:28px">📼</div>
+            <div><b>Drop videos or a whole folder here</b></div>
+            <div style="color:#888;font-size:10px">MP4 · MOV · MKV · AVI · WEBM · M4V and more</div>
+          </div>
+          <input type="file" id="fileInput-${id}" accept="video/*,.mov,.mkv,.avi,.m4v,.mts" multiple style="display:none" onchange="uploadFiles('${id}',this.files)">
+        </fieldset>
+        <fieldset>
+          <legend>Queue (<span id="vidcount-${id}">0</span> videos)</legend>
+          <div class="video-list" id="videoList-${id}"></div>
+        </fieldset>
+      </div>
+
+      <!-- Captions tab -->
+      <div id="econtent-captions" class="tab-content">
+        <fieldset>
+          <legend>Hooks / Captions — one per line</legend>
+          <textarea id="captionPaste-${id}" class="caption-paste" placeholder="Feel the deep 🌊&#10;Sunset never ends ✨&#10;Let the bass breathe 🎧&#10;..."></textarea>
+          <div class="flex" style="margin-top:4px">
+            <button class="btn btn-primary" onclick="saveCaptions('${id}')">💾 Save</button>
+            <span style="color:#0a246a;font-size:10px" id="capSaveMsg-${id}"></span>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Saved (<span id="capcount-${id}">0</span> hooks)</legend>
+          <div class="caption-list-display" id="captionDisplay-${id}"></div>
+        </fieldset>
+      </div>
+
+      <!-- Settings tab -->
+      <div id="econtent-settings" class="tab-content">
+        <fieldset>
+          <legend>Subtopic Settings</legend>
+
+          <!-- HASHTAGS -->
+          <div style="background:#eef4ff;border:1px solid #b0c8ee;padding:7px 8px;margin-bottom:8px">
+            <div style="font-weight:bold;color:#0a246a;font-size:10px;letter-spacing:1px;margin-bottom:6px"># HASHTAGS</div>
+            <div class="row">
+              <label>Core <span style="font-weight:normal;color:#777">(always on every video)</span></label>
+              <input type="text" id="stHashtagsCore-${id}" placeholder="#Shorts, #DeepHouse">
+            </div>
+            <div class="row">
+              <label>Pool <span style="font-weight:normal;color:#777">(comma separated — picked randomly)</span></label>
+              <textarea id="stHashtagsPool-${id}" style="height:46px;font-size:10px" placeholder="#SunsetVibes, #Bass, #ChillBeats, #NightDrive, #Melodic, #Vibes, #Techno"></textarea>
+            </div>
+            <div class="flex">
+              <label style="margin:0;white-space:nowrap">Pick</label>
+              <input type="number" id="stHashtagsN-${id}" value="3" min="0" max="15" style="width:48px">
+              <span style="font-size:10px;color:#555">from pool per video</span>
+            </div>
+          </div>
+
+          <!-- TAGS -->
+          <div style="background:#f0fff0;border:1px solid #a0cca0;padding:7px 8px;margin-bottom:8px">
+            <div style="font-weight:bold;color:#1b5e20;font-size:10px;letter-spacing:1px;margin-bottom:6px">🏷 TAGS (Keywords)</div>
+            <div class="row">
+              <label>Core <span style="font-weight:normal;color:#777">(always on every video)</span></label>
+              <input type="text" id="stTagsCore-${id}" placeholder="deep house, music">
+            </div>
+            <div class="row">
+              <label>Pool <span style="font-weight:normal;color:#777">(comma separated — picked randomly)</span></label>
+              <textarea id="stTagsPool-${id}" style="height:46px;font-size:10px" placeholder="sunset vibes, bass music, chill beats, night drive, melodic house, electronic"></textarea>
+            </div>
+            <div class="flex">
+              <label style="margin:0;white-space:nowrap">Pick</label>
+              <input type="number" id="stTagsN-${id}" value="5" min="0" max="30" style="width:48px">
+              <span style="font-size:10px;color:#555">from pool per video</span>
+            </div>
+          </div>
+
+          <!-- LANGUAGE -->
+          <div class="row">
+            <label>Language</label>
+            <select id="stLang-${id}">
+              <option value="en">🇬🇧 English</option>
+              <option value="de">🇩🇪 Deutsch</option>
+            </select>
+          </div>
+
+          <div class="flex" style="margin-top:6px">
+            <button class="btn btn-primary" onclick="saveSubtopicSettings('${id}')">💾 Save Settings</button>
+            <span style="color:#0a246a;font-size:10px" id="settSaveMsg-${id}"></span>
+          </div>
+        </fieldset>
+      </div>
+    </div>`;
+
+  // Setup dropzone
+  setupDropzone(id);
+
+  // Load data
   fetch(`/playlist-info/${id}`).then(r => r.json()).then(data => {
-    renderVideoList(data.videos);
-    renderCaptionDisplay(data.captions);
-    document.getElementById('captionPaste').value = data.captions.join('\n');
-    document.getElementById('captionCount').textContent = data.captions.length;
-    if (data.config.hashtags) document.getElementById('settingsHashtags').value = data.config.hashtags;
-    if (data.config.tags) document.getElementById('settingsTags').value = data.config.tags;
-    if (data.config.language) document.getElementById('settingsLanguage').value = data.config.language;
+    renderVideoList(id, data.videos);
+    renderCaptionDisplay(id, data.captions);
+    const cp = document.getElementById(`captionPaste-${id}`);
+    if (cp) cp.value = data.captions.join('\n');
+    const c = data.config;
+    const v = (key, fallback='') => c[key] !== undefined ? c[key] : fallback;
+    // Hashtags — support old single-field config
+    const coreHt = v('hashtagsCore', v('hashtags', '#Shorts'));
+    document.getElementById(`stHashtagsCore-${id}`).value = coreHt;
+    document.getElementById(`stHashtagsPool-${id}`).value = v('hashtagsPool');
+    document.getElementById(`stHashtagsN-${id}`).value = v('hashtagsPickN', 3);
+    // Tags
+    document.getElementById(`stTagsCore-${id}`).value = v('tagsCore', v('tags', ''));
+    document.getElementById(`stTagsPool-${id}`).value = v('tagsPool');
+    document.getElementById(`stTagsN-${id}`).value = v('tagsPickN', 5);
+    // Language
+    if (c.language) document.getElementById(`stLang-${id}`).value = c.language;
   });
 }
 
-async function createPlaylist() {
-  const name = document.getElementById('newPlaylistName').value.trim().toLowerCase().replace(/ /g, '-');
-  const displayName = document.getElementById('newPlaylistDisplay').value.trim() || name;
-  if (!name || !currentAccount) return;
-  const res = await fetch('/create-playlist', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name, displayName, account: currentAccount, hashtags: '', tags: '' })
+function switchEditorTab(name) {
+  ['videos','captions','settings'].forEach(t => {
+    document.getElementById(`etab-${t}`)?.classList.toggle('active', t === name);
+    document.getElementById(`econtent-${t}`)?.classList.toggle('active', t === name);
   });
-  const data = await res.json();
-  if (data.ok) {
-    if (!PLAYLISTS_BY_ACCOUNT[currentAccount]) PLAYLISTS_BY_ACCOUNT[currentAccount] = [];
-    PLAYLISTS_BY_ACCOUNT[currentAccount].push({ id: data.name, displayName });
-    renderPlaylists();
-    document.getElementById('newPlaylistName').value = '';
-    document.getElementById('newPlaylistDisplay').value = '';
-    setStatus(`Playlist "${displayName}" created!`);
+}
+
+function setupDropzone(id) {
+  const dz = document.getElementById(`dropzone-${id}`);
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', async e => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    const files = await collectDroppedFiles(e.dataTransfer);
+    if (files.length) uploadFiles(id, files);
+  });
+}
+
+const VIDEO_EXTS = new Set(['.mp4','.mov','.avi','.mkv','.webm','.m4v','.flv','.wmv','.mts','.m2ts']);
+
+function isVideoFile(name) {
+  const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
+  return VIDEO_EXTS.has(ext);
+}
+
+async function collectDroppedFiles(dataTransfer) {
+  const files = [];
+  // Use DataTransferItem API for folder support
+  if (dataTransfer.items && dataTransfer.items.length) {
+    const entries = [];
+    for (const item of dataTransfer.items) {
+      const entry = item.webkitGetAsEntry?.();
+      if (entry) entries.push(entry);
+    }
+    for (const entry of entries) {
+      await traverseEntry(entry, files);
+    }
+  } else {
+    // Fallback: plain file list
+    for (const f of dataTransfer.files) {
+      if (isVideoFile(f.name)) files.push(f);
+    }
+  }
+  return files;
+}
+
+async function traverseEntry(entry, files) {
+  if (entry.isFile) {
+    const file = await new Promise((res, rej) => entry.file(res, rej));
+    if (isVideoFile(file.name)) files.push(file);
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader();
+    // readEntries may return batches — call until empty
+    let batch;
+    do {
+      batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+      for (const child of batch) {
+        await traverseEntry(child, files);
+      }
+    } while (batch.length > 0);
   }
 }
 
-// Inner tabs
-function switchInnerTab(id) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  const tabs = ['tab-videos','tab-captions','tab-settings'];
-  document.querySelectorAll('.tab')[tabs.indexOf(id)].classList.add('active');
-}
-
-// Videos
-const dropzone = document.getElementById('dropzone');
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); uploadFiles(e.dataTransfer.files); });
-
-function uploadFiles(files) {
-  if (!currentPlaylist) { alert('Bitte zuerst eine Playlist auswählen!'); return; }
+function uploadFiles(playlistId, files) {
   const formData = new FormData();
   let count = 0;
-  for (const f of files) { if (f.name.endsWith('.mp4')) { formData.append('videos', f); count++; } }
-  if (!count) return;
-  setStatus(`Lade ${count} Video(s) hoch...`);
-  fetch(`/upload-video/${currentPlaylist}`, { method: 'POST', body: formData })
+  for (const f of files) {
+    if (isVideoFile(f.name)) { formData.append('videos', f); count++; }
+  }
+  if (!count) { setStatus('No supported video files found'); return; }
+  setStatus(`Uploading ${count} file(s)...`);
+  fetch(`/upload-video/${playlistId}`, { method: 'POST', body: formData })
     .then(r => r.json())
-    .then(() => { selectPlaylist(currentPlaylist, currentPlaylistDisplay); setStatus(`${count} video(s) uploaded!`); });
+    .then(d => {
+      setStatus(`✓ ${d.uploaded?.length || count} video(s) added`);
+      reloadSubtopicVideos(playlistId);
+    });
 }
 
-function renderVideoList(videos) {
-  const list = document.getElementById('videoList');
+function reloadSubtopicVideos(id) {
+  fetch(`/playlist-info/${id}`).then(r => r.json()).then(data => {
+    renderVideoList(id, data.videos);
+    const el = document.getElementById(`stcount-${id}`);
+    if (el) el.textContent = `${data.videos.length} videos · ${data.captions.length} hooks`;
+  });
+}
+
+function renderVideoList(id, videos) {
+  const list = document.getElementById(`videoList-${id}`);
+  if (!list) return;
   list.innerHTML = '';
   videos.forEach(v => {
     const div = document.createElement('div');
     div.className = 'video-item';
-    div.innerHTML = `<span>📼 ${v}</span><button class="btn btn-danger" onclick="deleteVideo('${v}')">✕</button>`;
+    div.innerHTML = `<span>📼 ${v}</span>
+      <button class="video-item-del" onclick="deleteVideo('${id}','${v}')">✕</button>`;
     list.appendChild(div);
   });
-  document.getElementById('videoCount').textContent = videos.length;
+  const cnt = document.getElementById(`vidcount-${id}`);
+  if (cnt) cnt.textContent = videos.length;
 }
 
-function deleteVideo(filename) {
-  if (!confirm(`"${filename}" löschen?`)) return;
-  fetch(`/delete-video/${currentPlaylist}`, {
-    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({filename})
-  }).then(() => selectPlaylist(currentPlaylist, currentPlaylistDisplay));
+function deleteVideo(playlistId, filename) {
+  if (!confirm(`Remove "${filename}"?`)) return;
+  fetch(`/delete-video/${playlistId}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({filename})
+  }).then(() => reloadSubtopicVideos(playlistId));
 }
 
-// Captions
-function renderCaptionDisplay(captions) {
-  const list = document.getElementById('captionListDisplay');
-  list.innerHTML = '';
+function renderCaptionDisplay(id, captions) {
+  const disp = document.getElementById(`captionDisplay-${id}`);
+  if (!disp) return;
+  disp.innerHTML = '';
   captions.forEach(c => {
     const div = document.createElement('div');
     div.className = 'caption-item';
     div.textContent = c;
-    list.appendChild(div);
+    disp.appendChild(div);
   });
-  document.getElementById('captionCount').textContent = captions.length;
+  const cnt = document.getElementById(`capcount-${id}`);
+  if (cnt) cnt.textContent = captions.length;
 }
 
-function saveCaptionsFromPaste() {
-  if (!currentPlaylist) { alert('No playlist selected!'); return; }
-  const text = document.getElementById('captionPaste').value;
-  const captions = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  fetch(`/save-captions/${currentPlaylist}`, {
-    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({captions})
-  }).then(() => {
-    renderCaptionDisplay(captions);
-    document.getElementById('captionSaveStatus').textContent = `✓ ${captions.length} captions saved`;
-    setTimeout(() => document.getElementById('captionSaveStatus').textContent = '', 2000);
-  });
-}
-
-// Settings
-function saveSettings() {
-  if (!currentPlaylist) return;
-  fetch(`/save-config/${currentPlaylist}`, {
+function saveCaptions(id) {
+  const text = document.getElementById(`captionPaste-${id}`)?.value || '';
+  const captions = text.split('\n').map(l => l.trim()).filter(l => l);
+  fetch(`/save-captions/${id}`, {
     method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      account: currentAccount,
-      hashtags: document.getElementById('settingsHashtags').value,
-      tags: document.getElementById('settingsTags').value,
-      language: document.getElementById('settingsLanguage').value,
-      privacy: 'public',
-    })
-  }).then(() => setStatus('Settings saved!'));
+    body: JSON.stringify({captions})
+  }).then(() => {
+    renderCaptionDisplay(id, captions);
+    const msg = document.getElementById(`capSaveMsg-${id}`);
+    if (msg) { msg.textContent = `✓ ${captions.length} saved`; setTimeout(() => msg.textContent='', 2000); }
+    const el = document.getElementById(`stcount-${id}`);
+    if (el) {
+      fetch(`/playlist-info/${id}`).then(r=>r.json()).then(d => el.textContent = `${d.videos.length} videos · ${d.captions.length} hooks`);
+    }
+  });
 }
 
-// Schedule
+function saveSubtopicSettings(id) {
+  const data = {
+    account: currentAccount,
+    displayName: (PLAYLISTS_BY_ACCOUNT[currentAccount] || []).find(p=>p.id===id)?.displayName || id,
+    hashtagsCore: document.getElementById(`stHashtagsCore-${id}`)?.value || '#Shorts',
+    hashtagsPool: document.getElementById(`stHashtagsPool-${id}`)?.value || '',
+    hashtagsPickN: parseInt(document.getElementById(`stHashtagsN-${id}`)?.value || '3'),
+    tagsCore: document.getElementById(`stTagsCore-${id}`)?.value || '',
+    tagsPool: document.getElementById(`stTagsPool-${id}`)?.value || '',
+    tagsPickN: parseInt(document.getElementById(`stTagsN-${id}`)?.value || '5'),
+    language: document.getElementById(`stLang-${id}`)?.value || 'en',
+    privacy: 'public',
+  };
+  fetch(`/save-config/${id}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  }).then(() => {
+    const msg = document.getElementById(`settSaveMsg-${id}`);
+    if (msg) { msg.textContent = '✓ Saved'; setTimeout(() => msg.textContent='', 2000); }
+  });
+}
+
+async function createSubtopic() {
+  if (!currentAccount) { alert('Select an account first!'); return; }
+  const displayName = document.getElementById('newSubtopicDisplay').value.trim();
+  const rawId = document.getElementById('newSubtopicId').value.trim() || displayName;
+  const id = rawId.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (!id) return;
+  const res = await fetch('/create-playlist', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name: id, displayName: displayName || id, account: currentAccount })
+  });
+  const d = await res.json();
+  if (d.ok) {
+    if (!PLAYLISTS_BY_ACCOUNT[currentAccount]) PLAYLISTS_BY_ACCOUNT[currentAccount] = [];
+    PLAYLISTS_BY_ACCOUNT[currentAccount].push({ id: d.name, displayName: displayName || d.name });
+    document.getElementById('newSubtopicDisplay').value = '';
+    document.getElementById('newSubtopicId').value = '';
+    renderSubtopicList();
+    setStatus(`Subtopic "${displayName || d.name}" created`);
+    // Auto-open it
+    setTimeout(() => {
+      const el = document.querySelector(`.subtopic-item[data-id="${d.name}"]`);
+      if (el) openSubtopic(d.name, displayName || d.name, el);
+    }, 100);
+  }
+}
+
+function deleteSubtopic(e, id, displayName) {
+  e.stopPropagation();
+  if (!confirm(`Delete subtopic "${displayName}"?\n\nAll videos and captions in this subtopic will be permanently deleted.`)) return;
+  fetch(`/delete-playlist/${id}`, { method: 'POST' }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      const list = PLAYLISTS_BY_ACCOUNT[currentAccount] || [];
+      const idx = list.findIndex(p => p.id === id);
+      if (idx > -1) list.splice(idx, 1);
+      if (currentSubtopic === id) {
+        currentSubtopic = '';
+        document.getElementById('subtopicEditor').innerHTML = `
+          <div class="subtopic-editor-empty">
+            <div class="arrow">←</div>
+            <div><b>Select a subtopic</b> from the list<br>or create a new one</div>
+          </div>`;
+      }
+      renderSubtopicList();
+      setStatus(`"${displayName}" deleted`);
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// STEP 3 — SCHEDULE
+// ─────────────────────────────────────────────
+function initSlotSync() {
+  document.querySelectorAll('.slot-cb').forEach(cb => {
+    cb.addEventListener('change', updatePerdayCount);
+  });
+}
+
+function updatePerdayCount() {
+  const count = document.querySelectorAll('.slot-cb:checked').length;
+  document.getElementById('perdayCount').textContent = count;
+  // Highlight matching per-day button
+  document.querySelectorAll('.per-day-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.n) === count);
+  });
+}
+
 function setPerDay(n, btn) {
-  perDay = n;
-  document.querySelectorAll('.per-day-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const order = [1, 4, 3, 5, 0, 2];
   const cbs = document.querySelectorAll('.slot-cb');
   cbs.forEach(cb => cb.checked = false);
-  for (let i = 0; i < n; i++) cbs[order[i]].checked = true;
+  for (let i = 0; i < n && i < SLOT_PRIORITY.length; i++) {
+    const cb = document.querySelector(`.slot-cb[data-slot="${SLOT_PRIORITY[i]}"]`);
+    if (cb) cb.checked = true;
+  }
+  updatePerdayCount();
+}
+
+function enterScheduleStep() {
+  if (!currentAccount) return;
+  const playlists = PLAYLISTS_BY_ACCOUNT[currentAccount] || [];
+
+  const box = document.getElementById('subtopicSelectionBox');
+  const pillsDiv = document.getElementById('scheduleSubtopicPills');
+
+  if (playlists.length <= 1) {
+    box.style.display = 'none';
+    activeScheduleSubtopics = playlists.map(p => p.id);
+  } else {
+    box.style.display = '';
+    pillsDiv.innerHTML = '';
+    activeScheduleSubtopics = playlists.map(p => p.id); // all active by default
+    playlists.forEach(p => {
+      const pill = document.createElement('div');
+      pill.className = 'subtopic-pill active';
+      pill.dataset.id = p.id;
+      pill.textContent = p.displayName || p.id;
+      pill.onclick = () => {
+        pill.classList.toggle('active');
+        activeScheduleSubtopics = Array.from(document.querySelectorAll('.subtopic-pill.active')).map(el => el.dataset.id);
+      };
+      pillsDiv.appendChild(pill);
+    });
+  }
 }
 
 function toggleCaption() {
@@ -678,21 +1147,23 @@ function toggleCaption() {
 }
 
 async function createSchedule() {
-  if (!currentPlaylist) { alert('Bitte Playlist auswählen!'); return; }
-  const activeSlots = Array.from(document.querySelectorAll('.slot-cb')).filter(c => c.checked).map(c => parseInt(c.dataset.slot));
-  if (!activeSlots.length) { alert('Mindestens einen Zeitslot auswählen!'); return; }
+  if (!currentAccount) { alert('Select an account first!'); return; }
+  const selectedSubtopics = activeScheduleSubtopics.length
+    ? activeScheduleSubtopics
+    : (PLAYLISTS_BY_ACCOUNT[currentAccount] || []).map(p => p.id);
 
-  setStatus('Creating schedule...');
-  const config = await fetch(`/playlist-info/${currentPlaylist}`).then(r => r.json());
+  if (!selectedSubtopics.length) { alert('No subtopics found. Create one in Step 2.'); return; }
 
+  const activeSlots = Array.from(document.querySelectorAll('.slot-cb:checked')).map(c => parseInt(c.dataset.slot));
+  if (!activeSlots.length) { alert('Select at least one time slot!'); return; }
+
+  setStatus('Generating schedule...');
   const res = await fetch('/schedule', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
-      playlist: currentPlaylist,
+      playlists: selectedSubtopics,
       account: currentAccount,
       startDate: document.getElementById('startDate').value,
-      hashtags: document.getElementById('settingsHashtags').value || config.config.hashtags || '#Shorts',
-      tags: document.getElementById('settingsTags').value || config.config.tags || '',
       privacy: document.getElementById('privacy').value,
       captionMode: document.querySelector('input[name="captionMode"]:checked').value,
       fixedCaption: document.getElementById('fixedCaption').value,
@@ -701,49 +1172,86 @@ async function createSchedule() {
     })
   });
   const data = await res.json();
+
+  if (data.error) { alert(data.error); return; }
+
   const tbody = document.getElementById('scheduleBody');
   tbody.innerHTML = '';
   data.scheduled.forEach(s => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>📼 ${s.video}</td><td>${s.date}</td><td>${s.slot}</td><td>${s.publishAt}</td><td>${s.caption}</td>`;
+    tr.innerHTML = `
+      <td><span class="tag-badge">${s.playlistDisplay}</span></td>
+      <td>📼 ${s.video}</td>
+      <td>${s.date}</td>
+      <td>${s.slot}</td>
+      <td style="font-family:monospace;font-size:9px">${s.publishAt}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.caption}</td>`;
     tbody.appendChild(tr);
   });
-  document.getElementById('scheduleResult').style.display = 'block';
-  setStatus(`${data.scheduled.length} Videos geplant!`);
+
+  document.getElementById('scheduleCount').textContent = data.scheduled.length;
+  document.getElementById('scheduleResult').style.display = '';
+  setStatus(`✓ ${data.scheduled.length} videos scheduled`);
 }
 
-// Upload
+// ─────────────────────────────────────────────
+// STEP 4 — UPLOAD
+// ─────────────────────────────────────────────
+function enterUploadStep() {
+  document.getElementById('uploadAccount').textContent = currentAccount || '—';
+  const playlists = activeScheduleSubtopics.length
+    ? activeScheduleSubtopics
+    : (PLAYLISTS_BY_ACCOUNT[currentAccount] || []).map(p => p.id);
+  document.getElementById('uploadSubtopics').textContent = playlists.join(', ') || '—';
+}
+
 async function startUpload() {
-  if (!currentPlaylist || !currentAccount) { alert('Account und Playlist auswählen!'); return; }
+  if (!currentAccount) { alert('No account selected!'); return; }
+  const playlists = activeScheduleSubtopics.length
+    ? activeScheduleSubtopics
+    : (PLAYLISTS_BY_ACCOUNT[currentAccount] || []).map(p => p.id);
+
   document.getElementById('uploadBtn').disabled = true;
   document.getElementById('logBlink').style.display = 'inline';
-  document.getElementById('progressFill').style.width = '20%';
-  document.getElementById('progressFill').textContent = 'uploading...';
-  document.getElementById('logBox').textContent = `Starting upload...\nAccount: ${currentAccount}\nPlaylist: ${currentPlaylistDisplay}\n`;
+  document.getElementById('progressFill').style.width = '10%';
+  document.getElementById('progressFill').textContent = 'starting...';
+  document.getElementById('logBox').textContent = `Starting upload...\nAccount: ${currentAccount}\nSubtopics: ${playlists.join(', ')}\n`;
 
   await fetch('/start-upload', {
     method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({account: currentAccount, playlist: currentPlaylist})
+    body: JSON.stringify({ account: currentAccount, playlists })
   });
-  pollInterval = setInterval(pollStatus, 1000);
+  pollInterval = setInterval(pollUploadStatus, 1200);
 }
 
-function pollStatus() {
+function pollUploadStatus() {
   fetch('/upload-status').then(r => r.json()).then(data => {
-    const logBox = document.getElementById('logBox');
-    logBox.textContent = data.log.join('\n') || 'Ready...';
-    logBox.scrollTop = logBox.scrollHeight;
+    const box = document.getElementById('logBox');
+    box.textContent = data.log.join('\n') || 'Ready...';
+    box.scrollTop = box.scrollHeight;
     if (!data.running) {
       clearInterval(pollInterval);
       document.getElementById('uploadBtn').disabled = false;
       document.getElementById('logBlink').style.display = 'none';
       document.getElementById('progressFill').style.width = '100%';
-      document.getElementById('progressFill').textContent = 'Fertig!';
-      setStatus('Upload abgeschlossen!');
+      document.getElementById('progressFill').textContent = 'Done!';
+      setStatus('✓ Upload complete');
+    } else {
+      // estimate progress from log lines
+      const total = data.log.filter(l => l.includes('Uploading')).length;
+      const done = data.log.filter(l => l.includes('✓')).length;
+      if (total > 0) {
+        const pct = Math.round(10 + (done / total) * 85);
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressFill').textContent = `${done}/${total}`;
+      }
     }
   });
 }
 
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
 function setStatus(msg) { document.getElementById('statusMsg').textContent = msg; }
 function setInfo(msg) { document.getElementById('statusInfo').textContent = msg; }
 </script>
