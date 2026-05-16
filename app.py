@@ -436,7 +436,7 @@ def schedule():
 
         meta = {
             "title": caption,
-            "description": caption,
+            "description": "",  # build_description adds hashtags only
             "tags": final_tags,
             "hashtags": final_hashtags,
             "privacy": privacy,

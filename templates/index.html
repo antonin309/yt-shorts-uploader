@@ -826,7 +826,10 @@ function renderSubtopicEditor(id) {
           <input type="file" id="fileInput-${id}" accept="video/*,.mov,.mkv,.avi,.m4v,.mts" multiple style="display:none" onchange="uploadFiles('${id}',this.files)">
         </fieldset>
         <fieldset>
-          <legend>Queue (<span id="vidcount-${id}">0</span> videos)</legend>
+          <legend style="display:flex;align-items:center;gap:8px;width:100%">
+            <span>Queue (<span id="vidcount-${id}">0</span> videos)</span>
+            <button class="btn btn-sm btn-red" style="margin-left:auto;font-size:9px;padding:1px 6px" onclick="removeAllVideos('${id}')">✕ Remove All</button>
+          </legend>
           <div class="video-list" id="videoList-${id}"></div>
         </fieldset>
       </div>
@@ -1054,11 +1057,22 @@ function renderVideoList(id, videos) {
 }
 
 function deleteVideo(playlistId, filename) {
-  if (!confirm(`Remove "${filename}"?`)) return;
   fetch(`/delete-video/${playlistId}`, {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({filename})
   }).then(() => reloadSubtopicVideos(playlistId));
+}
+
+function removeAllVideos(playlistId) {
+  fetch(`/playlist-info/${playlistId}`).then(r => r.json()).then(data => {
+    if (!data.videos.length) return;
+    Promise.all(data.videos.map(v =>
+      fetch(`/delete-video/${playlistId}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({filename: v})
+      })
+    )).then(() => { reloadSubtopicVideos(playlistId); setStatus('Queue cleared'); });
+  });
 }
 
 function renderCaptionDisplay(id, captions) {

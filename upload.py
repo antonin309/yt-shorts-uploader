@@ -57,8 +57,6 @@ def upload_video(youtube, video_path, meta_path):
     title = meta.get("title", "")
     description = build_description(meta)
     tags = meta.get("tags", [])
-    if "Shorts" not in tags:
-        tags.append("Shorts")
     privacy = meta.get("privacy", "public")
     made_for_kids = meta.get("madeForKids", False)
     publish_at = meta.get("publishAt", None)
@@ -124,12 +122,32 @@ def main():
         print(f"Keine Videos in '{VIDEOS_FOLDER}/' gefunden.")
         return
 
+    # Load subtopic config for fallback defaults
+    config_path = os.path.join(os.path.dirname(args.videos_folder), "config.json")
+    subtopic_config = {}
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            subtopic_config = json.load(f)
+
     uploaded = 0
     for video_path in video_files:
         meta_path = os.path.splitext(video_path)[0] + ".json"
+        # Auto-generate meta from subtopic config if no .json exists
         if not os.path.exists(meta_path):
-            print(f"Übersprungen (keine .json): {os.path.basename(video_path)}")
-            continue
+            print(f"Kein .json für {os.path.basename(video_path)} — nutze Subtopic-Defaults")
+            meta = {
+                "title": "",
+                "description": "",
+                "tags": [t.strip() for t in subtopic_config.get("tags", subtopic_config.get("tagsCore", "")).split(",") if t.strip()],
+                "hashtags": [h.strip() for h in subtopic_config.get("hashtags", subtopic_config.get("hashtagsCore", "")).split(",") if h.strip()],
+                "privacy": subtopic_config.get("privacy", "public"),
+                "madeForKids": False,
+                "language": subtopic_config.get("language", "en"),
+                "categoryId": subtopic_config.get("category", "auto"),
+                "publishAt": None,
+            }
+            with open(meta_path, "w", encoding="utf-8") as f:
+                json.dump(meta, f, ensure_ascii=False, indent=2)
         upload_video(youtube, video_path, meta_path)
         uploaded += 1
 
