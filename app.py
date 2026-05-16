@@ -385,7 +385,11 @@ def schedule():
     config_by_pl = {}
     video_queues = []
     for pl in playlists:
-        videos = sorted(glob.glob(os.path.join(playlist_path(pl), "videos", "*.mp4")))
+        vid_folder = os.path.join(playlist_path(pl), "videos")
+        videos = sorted([
+            os.path.join(vid_folder, f) for f in os.listdir(vid_folder)
+            if os.path.isdir(vid_folder) and os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS
+        ]) if os.path.isdir(vid_folder) else []
         video_queues.append((pl, videos))
         captions_by_pl[pl] = load_playlist_captions(pl)
         config_by_pl[pl] = load_playlist_config(pl)
