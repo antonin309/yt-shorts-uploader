@@ -420,19 +420,25 @@ def schedule():
         else:
             caption = ""
 
-        # ── Hashtags: core always + N random from pool ──
-        core_ht = [h.strip() for h in pl_config.get("hashtagsCore", pl_config.get("hashtags", "#Shorts")).split(",") if h.strip()]
-        pool_ht = [h.strip() for h in pl_config.get("hashtagsPool", "").split(",") if h.strip()]
-        pick_ht = int(pl_config.get("hashtagsPickN", 3))
-        picked_ht = random.sample(pool_ht, min(pick_ht, len(pool_ht))) if pool_ht else []
-        final_hashtags = core_ht + picked_ht
+        # ── Hashtags: core always + N random from pool (if enabled) ──
+        if pl_config.get("hashtagsEnabled", True):
+            core_ht = [h.strip() for h in pl_config.get("hashtagsCore", pl_config.get("hashtags", "")).split(",") if h.strip()]
+            pool_ht = [h.strip() for h in pl_config.get("hashtagsPool", "").split(",") if h.strip()]
+            pick_ht = int(pl_config.get("hashtagsPickN", 3))
+            picked_ht = random.sample(pool_ht, min(pick_ht, len(pool_ht))) if pool_ht else []
+            final_hashtags = core_ht + picked_ht
+        else:
+            final_hashtags = []
 
-        # ── Tags: core always + N random from pool ──
-        core_tg = [t.strip() for t in pl_config.get("tagsCore", pl_config.get("tags", "")).split(",") if t.strip()]
-        pool_tg = [t.strip() for t in pl_config.get("tagsPool", "").split(",") if t.strip()]
-        pick_tg = int(pl_config.get("tagsPickN", 5))
-        picked_tg = random.sample(pool_tg, min(pick_tg, len(pool_tg))) if pool_tg else []
-        final_tags = core_tg + picked_tg
+        # ── Tags: core always + N random from pool (if enabled) ──
+        if pl_config.get("tagsEnabled", True):
+            core_tg = [t.strip() for t in pl_config.get("tagsCore", pl_config.get("tags", "")).split(",") if t.strip()]
+            pool_tg = [t.strip() for t in pl_config.get("tagsPool", "").split(",") if t.strip()]
+            pick_tg = int(pl_config.get("tagsPickN", 5))
+            picked_tg = random.sample(pool_tg, min(pick_tg, len(pool_tg))) if pool_tg else []
+            final_tags = core_tg + picked_tg
+        else:
+            final_tags = []
 
         meta = {
             "title": caption,

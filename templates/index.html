@@ -856,8 +856,11 @@ function renderSubtopicEditor(id) {
           <legend>Subtopic Settings</legend>
 
           <!-- HASHTAGS -->
-          <div style="background:#eef4ff;border:1px solid #b0c8ee;padding:7px 8px;margin-bottom:8px">
-            <div style="font-weight:bold;color:#0a246a;font-size:10px;letter-spacing:1px;margin-bottom:6px"># HASHTAGS</div>
+          <div style="background:#eef4ff;border:1px solid #b0c8ee;padding:7px 8px;margin-bottom:8px" id="htBox-${id}">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div style="font-weight:bold;color:#0a246a;font-size:10px;letter-spacing:1px"># HASHTAGS</div>
+              <button class="toggle-btn" id="htToggle-${id}" onclick="toggleSection('ht','${id}')" style="font-size:9px;padding:2px 8px;border:1px solid #0a246a;background:#0a246a;color:white;cursor:pointer;font-family:Tahoma,sans-serif">ON</button>
+            </div>
             <div class="row">
               <label>Core <span style="font-weight:normal;color:#777">(always on every video)</span></label>
               <input type="text" id="stHashtagsCore-${id}" placeholder="#Shorts, #DeepHouse">
@@ -874,8 +877,11 @@ function renderSubtopicEditor(id) {
           </div>
 
           <!-- TAGS -->
-          <div style="background:#f0fff0;border:1px solid #a0cca0;padding:7px 8px;margin-bottom:8px">
-            <div style="font-weight:bold;color:#1b5e20;font-size:10px;letter-spacing:1px;margin-bottom:6px">🏷 TAGS (Keywords)</div>
+          <div style="background:#f0fff0;border:1px solid #a0cca0;padding:7px 8px;margin-bottom:8px" id="tgBox-${id}">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div style="font-weight:bold;color:#1b5e20;font-size:10px;letter-spacing:1px">🏷 TAGS (Keywords)</div>
+              <button class="toggle-btn" id="tgToggle-${id}" onclick="toggleSection('tg','${id}')" style="font-size:9px;padding:2px 8px;border:1px solid #1b5e20;background:#1b5e20;color:white;cursor:pointer;font-family:Tahoma,sans-serif">ON</button>
+            </div>
             <div class="row">
               <label>Core <span style="font-weight:normal;color:#777">(always on every video)</span></label>
               <input type="text" id="stTagsCore-${id}" placeholder="deep house, music">
@@ -936,8 +942,8 @@ function renderSubtopicEditor(id) {
     if (cp) cp.value = data.captions.join('\n');
     const c = data.config;
     const v = (key, fallback='') => c[key] !== undefined ? c[key] : fallback;
-    // Hashtags — support old single-field config
-    const coreHt = v('hashtagsCore', v('hashtags', '#Shorts'));
+    // Hashtags — support old single-field config (no forced #Shorts default)
+    const coreHt = v('hashtagsCore', v('hashtags', ''));
     document.getElementById(`stHashtagsCore-${id}`).value = coreHt;
     document.getElementById(`stHashtagsPool-${id}`).value = v('hashtagsPool');
     document.getElementById(`stHashtagsN-${id}`).value = v('hashtagsPickN', 3);
@@ -945,6 +951,9 @@ function renderSubtopicEditor(id) {
     document.getElementById(`stTagsCore-${id}`).value = v('tagsCore', v('tags', ''));
     document.getElementById(`stTagsPool-${id}`).value = v('tagsPool');
     document.getElementById(`stTagsN-${id}`).value = v('tagsPickN', 5);
+    // Toggles
+    applyToggle('ht', id, v('hashtagsEnabled', true));
+    applyToggle('tg', id, v('tagsEnabled', true));
     // Category
     document.getElementById(`stCategory-${id}`).value = v('category', 'auto');
     // Language
@@ -1110,12 +1119,14 @@ function saveSubtopicSettings(id) {
   const data = {
     account: currentAccount,
     displayName: (PLAYLISTS_BY_ACCOUNT[currentAccount] || []).find(p=>p.id===id)?.displayName || id,
-    hashtagsCore: document.getElementById(`stHashtagsCore-${id}`)?.value || '#Shorts',
+    hashtagsCore: document.getElementById(`stHashtagsCore-${id}`)?.value ?? '',
     hashtagsPool: document.getElementById(`stHashtagsPool-${id}`)?.value || '',
     hashtagsPickN: parseInt(document.getElementById(`stHashtagsN-${id}`)?.value || '3'),
     tagsCore: document.getElementById(`stTagsCore-${id}`)?.value || '',
     tagsPool: document.getElementById(`stTagsPool-${id}`)?.value || '',
     tagsPickN: parseInt(document.getElementById(`stTagsN-${id}`)?.value || '5'),
+    hashtagsEnabled: document.getElementById(`htToggle-${id}`)?.dataset.on === 'true',
+    tagsEnabled: document.getElementById(`tgToggle-${id}`)?.dataset.on === 'true',
     category: document.getElementById(`stCategory-${id}`)?.value || 'auto',
     language: document.getElementById(`stLang-${id}`)?.value || 'en',
     privacy: 'public',
@@ -1346,6 +1357,25 @@ function pollUploadStatus() {
 // ─────────────────────────────────────────────
 function setStatus(msg) { document.getElementById('statusMsg').textContent = msg; }
 function setInfo(msg) { document.getElementById('statusInfo').textContent = msg; }
+
+function toggleSection(prefix, id) {
+  const btn = document.getElementById(`${prefix}Toggle-${id}`);
+  const isOn = btn.dataset.on === 'true';
+  applyToggle(prefix, id, !isOn);
+}
+
+function applyToggle(prefix, id, on) {
+  const btn = document.getElementById(`${prefix}Toggle-${id}`);
+  const box = document.getElementById(`${prefix}Box-${id}`);
+  if (!btn || !box) return;
+  btn.dataset.on = on;
+  btn.textContent = on ? 'ON' : 'OFF';
+  btn.style.background = on ? (prefix === 'ht' ? '#0a246a' : '#1b5e20') : '#999';
+  btn.style.borderColor = on ? (prefix === 'ht' ? '#0a246a' : '#1b5e20') : '#999';
+  // Dim the fields when off
+  const fields = box.querySelectorAll('input, textarea, select');
+  fields.forEach(f => { f.disabled = !on; f.style.opacity = on ? '1' : '0.4'; });
+}
 
 function utcToLocal(utcStr) {
   if (!utcStr) return '—';
