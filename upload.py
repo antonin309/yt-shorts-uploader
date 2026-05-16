@@ -8,7 +8,10 @@ import googleapiclient.http
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly",
+]
 CLIENT_FILE = "client.json"
 VIDEOS_FOLDER = "videos"
 ACCOUNTS_FOLDER = "accounts"
@@ -42,13 +45,8 @@ def authenticate(account):
 def build_description(meta):
     description = meta.get("description", "")
     hashtags = meta.get("hashtags", [])
-
     if hashtags:
         description = description.rstrip() + "\n\n" + " ".join(hashtags)
-
-    if "#Shorts" not in description:
-        description = description.rstrip() + "\n\n#Shorts"
-
     return description
 
 
@@ -74,16 +72,17 @@ def upload_video(youtube, video_path, meta_path):
     if publish_at:
         status["publishAt"] = publish_at
 
-    body = {
-        "snippet": {
-            "title": title,
-            "description": description,
-            "tags": tags,
-            "categoryId": "22",
-            "defaultLanguage": language,
-        },
-        "status": status,
+    snippet = {
+        "title": title,
+        "description": description,
+        "tags": tags,
+        "defaultLanguage": language,
     }
+    category_id = meta.get("categoryId", "")
+    if category_id and category_id != "auto":
+        snippet["categoryId"] = category_id
+
+    body = {"snippet": snippet, "status": status}
 
     request = youtube.videos().insert(
         part="snippet,status",
@@ -115,7 +114,11 @@ def main():
 
     youtube = authenticate(args.account)
 
-    video_files = sorted(glob.glob(os.path.join(args.videos_folder, "*.mp4")))
+    VIDEO_EXTS = ('.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v', '.flv', '.wmv', '.mts', '.m2ts')
+    video_files = sorted([
+        f for f in glob.glob(os.path.join(args.videos_folder, "*"))
+        if os.path.splitext(f)[1].lower() in VIDEO_EXTS
+    ])
 
     if not video_files:
         print(f"Keine Videos in '{VIDEOS_FOLDER}/' gefunden.")
@@ -123,7 +126,7 @@ def main():
 
     uploaded = 0
     for video_path in video_files:
-        meta_path = video_path.replace(".mp4", ".json")
+        meta_path = os.path.splitext(video_path)[0] + ".json"
         if not os.path.exists(meta_path):
             print(f"Übersprungen (keine .json): {os.path.basename(video_path)}")
             continue

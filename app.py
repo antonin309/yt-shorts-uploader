@@ -13,7 +13,10 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly",
+]
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024
@@ -228,11 +231,41 @@ def connect_account(name):
             token_path = os.path.join(folder, "token.json")
             with open(token_path, "w") as f:
                 f.write(creds.to_json())
-            # Clear channel info cache so it refreshes on next load
+            # Clear old channel info cache
             cache_path = os.path.join(folder, "channel_info.json")
             if os.path.exists(cache_path):
                 os.remove(cache_path)
-            connect_status[name] = 'done'
+
+            # Fetch all channels to detect multi-channel accounts
+            youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+            resp = youtube.channels().list(part="snippet,statistics", mine=True, maxResults=10).execute()
+            items = resp.get("items", [])
+
+            if len(items) == 1:
+                # Only one channel — auto-select
+                item = items[0]
+                info = {
+                    "channelName": item["snippet"]["title"],
+                    "channelId": item["id"],
+                    "thumbnail": item["snippet"]["thumbnails"].get("default", {}).get("url", ""),
+                    "subscribers": item["statistics"].get("subscriberCount", "?"),
+                }
+                with open(cache_path, "w") as f:
+                    json.dump(info, f)
+                connect_status[name] = 'done'
+            elif len(items) > 1:
+                # Multiple channels — let user pick
+                channels = []
+                for item in items:
+                    channels.append({
+                        "channelId": item["id"],
+                        "channelName": item["snippet"]["title"],
+                        "thumbnail": item["snippet"]["thumbnails"].get("default", {}).get("url", ""),
+                        "subscribers": item["statistics"].get("subscriberCount", "?"),
+                    })
+                connect_status[name] = 'channels:' + json.dumps(channels)
+            else:
+                connect_status[name] = 'error:No YouTube channel found for this Google account'
         except Exception as e:
             connect_status[name] = f'error:{e}'
 
@@ -243,6 +276,42 @@ def connect_account(name):
 @app.route("/connect-status/<name>")
 def connect_status_route(name):
     return jsonify({"status": connect_status.get(name, 'idle')})
+
+
+@app.route("/select-channel/<name>", methods=["POST"])
+def select_channel(name):
+    data = request.json
+    channel_id = data.get("channelId", "")
+    if not channel_id:
+        return jsonify({"error": "No channelId"}), 400
+
+    token_path = os.path.join(ACCOUNTS_FOLDER, name, "token.json")
+    if not os.path.exists(token_path):
+        return jsonify({"error": "No token found"}), 404
+
+    try:
+        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+        resp = youtube.channels().list(part="snippet,statistics", id=channel_id).execute()
+        items = resp.get("items", [])
+        if not items:
+            return jsonify({"error": "Channel not found"}), 404
+        item = items[0]
+        info = {
+            "channelName": item["snippet"]["title"],
+            "channelId": item["id"],
+            "thumbnail": item["snippet"]["thumbnails"].get("default", {}).get("url", ""),
+            "subscribers": item["statistics"].get("subscriberCount", "?"),
+        }
+        cache_path = os.path.join(ACCOUNTS_FOLDER, name, "channel_info.json")
+        with open(cache_path, "w") as f:
+            json.dump(info, f)
+        connect_status[name] = 'done'
+        return jsonify({"ok": True, "info": info})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/delete-account/<name>", methods=["POST"])
@@ -373,6 +442,7 @@ def schedule():
             "privacy": privacy,
             "madeForKids": made_for_kids,
             "language": pl_config.get("language", "en"),
+            "categoryId": pl_config.get("category", "auto"),
             "publishAt": publish_at,
         }
 
