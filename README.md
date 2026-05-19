@@ -1,6 +1,6 @@
 # YouTube Shorts Uploader
 
-A Flask web app for scheduling and uploading YouTube Shorts across multiple channels simultaneously.
+I run multiple YouTube channels and uploading manually gets old fast. This Flask app connects to the YouTube API, lets you manage several accounts, and schedules uploads across time windows automatically.
 
 ## Features
 
