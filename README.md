@@ -1,6 +1,8 @@
 # YouTube Shorts Uploader
 
-This Flask app connects to the YouTube API, lets you manage several accounts, and schedules uploads across time windows automatically. Comes with a Windows XP-inspired UI — yes, it's kind of a joke for the first version.
+Same problem — multiple YouTube channels, uploading through YouTube Studio for each one manually took too long. Built a Flask app that handles scheduling and uploading via the YouTube API. First version ships with a Windows XP UI. Yes, on purpose.
+
+**Learned:** Python, Flask, YouTube Data API v3, OAuth2 flows
 
 ## Features
 
