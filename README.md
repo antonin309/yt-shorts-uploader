@@ -1,13 +1,14 @@
 # YouTube Shorts Uploader
 
-Same problem — multiple YouTube channels, uploading through YouTube Studio for each one manually took too long. Built a Flask app that handles scheduling and uploading via the YouTube API. First version ships with a Windows XP UI. Yes, on purpose.
+Built a Flask app that handles scheduling and uploading via the YouTube API. First version comes with a Windows XP UI.
 
 **Learned:** Python, Flask, YouTube Data API v3, OAuth2 flows
+
 
 ## Features
 
 - **Multi-account** — manage several YouTube channels from one dashboard
-- **Playlist management** — organize videos into playlists with per-playlist captions
+- **Channel management** — organize videos into channel sub-topics 
 - **Smart scheduling** — distributes uploads across configurable time windows (morning, evening, etc.)
 - **OAuth2 auth** — each account authenticates via Google OAuth, credentials stored locally
 - **Upload log** — real-time log of upload status per video/account
@@ -19,14 +20,6 @@ Same problem — multiple YouTube channels, uploading through YouTube Studio for
 - `google-auth-oauthlib` for OAuth flow
 - Jinja2 templates
 
-## Getting started
-
-```bash
-pip install -r requirements.txt
-python app.py
-```
-
-Open [http://localhost:5000](http://localhost:5000)
 
 ### Setup
 
@@ -36,16 +29,3 @@ Open [http://localhost:5000](http://localhost:5000)
 4. Put video playlists under `playlists/<name>/`
 5. Authenticate each account from the dashboard
 
-## Project structure
-
-```
-accounts/          # one folder per YouTube channel
-playlists/         # video + caption sets
-  └─ my-playlist/
-       ├─ config.json
-       ├─ captions.txt
-       └─ videos/
-app.py             # Flask app + upload logic
-schedule.py        # scheduling logic
-upload.py          # YouTube API wrapper
-```
